@@ -1,0 +1,35 @@
+{
+  "productCode": "DAO-CNC-001",
+  "name": "Dao phay CNC 10mm",
+  "category": "Dao phay",
+  "status": "usable",
+  "isInUse": false,
+  "location": "warehouse",
+  "geometry": {
+    "length": 75,
+    "width": 10,
+    "height": 10,
+    "diameter": 10,
+    "shape": "Trụ",
+    "material": "Hợp kim cứng"
+  },
+  "characteristics": {
+    "hardness": "HRC 60",
+    "coating": "TiAlN",
+    "brand": "Sandvik",
+    "model": "CoroMill 316",
+    "specifications": "4 me cắt, góc xoắn 30 độ"
+  },
+  "cuttingParameters": {
+    "speed": 1200,
+    "feed": 0.2,
+    "depth": 1.5,
+    "notes": "Phù hợp gia công thép carbon"
+  },
+  "catalogInfo": {
+    "manufacturer": "Sandvik Coromant",
+    "catalogNumber": "SC-316-10",
+    "source": "manufacturer",
+    "reference": "Catalog Sandvik 2024"
+  }
+}

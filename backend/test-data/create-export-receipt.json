@@ -1,0 +1,12 @@
+{
+  "tools": [
+    {
+      "tool": "REPLACE_WITH_TOOL_ID_HERE",
+      "quantity": 1,
+      "notes": "Xuất cho xưởng CNC số 1"
+    }
+  ],
+  "purpose": "Sử dụng tại xưởng sản xuất",
+  "department": "Phòng sản xuất",
+  "notes": "Xuất kho dụng cụ cho đơn hàng ABC123"
+}
