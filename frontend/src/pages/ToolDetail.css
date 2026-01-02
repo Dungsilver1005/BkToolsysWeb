@@ -1,0 +1,158 @@
+.tool-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.btn-back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+.tool-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.tool-detail-header h1 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.tool-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.detail-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.detail-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.info-item p {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-item {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-left: 4px solid #3498db;
+  border-radius: 4px;
+}
+
+.history-date {
+  font-size: 0.85rem;
+  color: #777;
+  margin-bottom: 0.5rem;
+}
+
+.history-action {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.history-notes {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.loading,
+.error-container {
+  text-align: center;
+  padding: 3rem;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  color: white;
+}
+
+.status-new {
+  background-color: #3498db;
+}
+
+.status-old {
+  background-color: #95a5a6;
+}
+
+.status-usable {
+  background-color: #27ae60;
+}
+
+.status-unusable {
+  background-color: #e74c3c;
+}
+
+.in-use {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.available {
+  color: #27ae60;
+  font-weight: 500;
+}
