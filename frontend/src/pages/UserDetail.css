@@ -1,4 +1,4 @@
-.tool-detail {
+.user-detail {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -15,31 +15,30 @@
   text-decoration: underline;
 }
 
-.tool-detail-header {
+.user-detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
 
-.tool-detail-header > div:first-child {
+.user-detail-header > div:first-child {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.tool-detail-header h1 {
+.user-detail-header h1 {
   margin: 0;
   color: #2c3e50;
 }
 
-.tool-actions {
+.user-actions {
   display: flex;
   gap: 0.5rem;
 }
 
 .btn-edit,
-.btn-transfer,
 .btn-delete {
   padding: 0.5rem 1rem;
   border: none;
@@ -58,15 +57,6 @@
   background-color: #2980b9;
 }
 
-.btn-transfer {
-  background-color: #f39c12;
-  color: white;
-}
-
-.btn-transfer:hover {
-  background-color: #e67e22;
-}
-
 .btn-delete {
   background-color: #e74c3c;
   color: white;
@@ -76,7 +66,7 @@
   background-color: #c0392b;
 }
 
-.tool-detail-grid {
+.user-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 2rem;
@@ -112,10 +102,6 @@
   flex-direction: column;
 }
 
-.info-item.full-width {
-  grid-column: 1 / -1;
-}
-
 .info-item label {
   font-weight: 600;
   color: #555;
@@ -126,6 +112,23 @@
 .info-item p {
   margin: 0;
   color: #2c3e50;
+}
+
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.role-admin {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.role-user {
+  background-color: #3498db;
+  color: white;
 }
 
 .history-list {
@@ -147,13 +150,7 @@
   margin-bottom: 0.5rem;
 }
 
-.history-action {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.history-notes {
+.history-info {
   color: #555;
   font-size: 0.9rem;
 }
@@ -173,35 +170,61 @@
   display: inline-block;
 }
 
-.status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: 500;
+  color: #555;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel,
+.btn-submit {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+}
+
+.btn-cancel:hover {
+  background-color: #bdc3c7;
+}
+
+.btn-submit {
+  background-color: #3498db;
   color: white;
 }
 
-.status-new {
-  background-color: #3498db;
+.btn-submit:hover:not(:disabled) {
+  background-color: #2980b9;
 }
 
-.status-old {
-  background-color: #95a5a6;
-}
-
-.status-usable {
-  background-color: #27ae60;
-}
-
-.status-unusable {
-  background-color: #e74c3c;
-}
-
-.in-use {
-  color: #e74c3c;
-  font-weight: 500;
-}
-
-.available {
-  color: #27ae60;
-  font-weight: 500;
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

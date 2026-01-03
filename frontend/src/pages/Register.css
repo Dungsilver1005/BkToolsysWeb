@@ -1,4 +1,4 @@
-.login-container {
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -7,24 +7,24 @@
   padding: 2rem;
 }
 
-.login-card {
+.register-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.login-header {
+.register-header {
   text-align: center;
   margin-bottom: 2rem;
 }
 
-.login-footer {
+.register-footer {
   text-align: center;
   margin-top: 1rem;
 }
 
-.login-footer a {
+.register-footer a {
   color: #1890ff;
   font-weight: 500;
 }

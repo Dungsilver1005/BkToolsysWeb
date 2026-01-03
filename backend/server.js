@@ -21,6 +21,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tools", require("./routes/tool"));
 app.use("/api/users", require("./routes/user"));
 app.use("/api/export-receipts", require("./routes/exportReceipts"));
+app.use("/api/tool-requests", require("./routes/toolRequests"));
 
 // Health check
 app.get("/api/health", (req, res) => {

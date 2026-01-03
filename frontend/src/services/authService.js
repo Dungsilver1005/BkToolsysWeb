@@ -5,6 +5,16 @@ import api from "./api";
  */
 export const authService = {
   /**
+   * Đăng ký
+   * @param {Object} userData - {username, email, password, fullName, department, role}
+   * @returns {Promise} Response từ API
+   */
+  register: async (userData) => {
+    const response = await api.post("/auth/register", userData);
+    return response.data;
+  },
+
+  /**
    * Đăng nhập
    * @param {string} username
    * @param {string} password

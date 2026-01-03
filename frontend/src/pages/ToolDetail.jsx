@@ -1,13 +1,29 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useToastContext } from "../context/ToastContext";
+import { Modal } from "../components/Modal";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { ToolForm } from "../components/ToolForm";
 import { toolService } from "../services/toolService";
 import "./ToolDetail.css";
 
 export const ToolDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { showSuccess, showError } = useToastContext();
   const [tool, setTool] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [transferData, setTransferData] = useState({
+    toLocation: "",
+    notes: "",
+  });
 
   useEffect(() => {
     fetchTool();
@@ -27,6 +43,69 @@ export const ToolDetail = () => {
       setError(err.response?.data?.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateTool = async (formData) => {
+    setSubmitting(true);
+    try {
+      const response = await toolService.updateTool(id, formData);
+      if (response.success) {
+        showSuccess("Cập nhật dụng cụ thành công");
+        setShowEditModal(false);
+        fetchTool();
+      } else {
+        showError(response.message || "Cập nhật dụng cụ thất bại");
+      }
+    } catch (err) {
+      showError(
+        err.response?.data?.message || "Có lỗi xảy ra khi cập nhật dụng cụ"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteTool = async () => {
+    setSubmitting(true);
+    try {
+      const response = await toolService.deleteTool(id);
+      if (response.success) {
+        showSuccess("Xóa dụng cụ thành công");
+        navigate("/tools");
+      } else {
+        showError(response.message || "Xóa dụng cụ thất bại");
+      }
+    } catch (err) {
+      showError(err.response?.data?.message || "Có lỗi xảy ra khi xóa dụng cụ");
+    } finally {
+      setSubmitting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleTransferTool = async () => {
+    if (!transferData.toLocation) {
+      showError("Vui lòng chọn vị trí đích");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const response = await toolService.transferTool(id, transferData);
+      if (response.success) {
+        showSuccess("Chuyển dụng cụ thành công");
+        setShowTransferModal(false);
+        setTransferData({ toLocation: "", notes: "" });
+        fetchTool();
+      } else {
+        showError(response.message || "Chuyển dụng cụ thất bại");
+      }
+    } catch (err) {
+      showError(
+        err.response?.data?.message || "Có lỗi xảy ra khi chuyển dụng cụ"
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -52,13 +131,34 @@ export const ToolDetail = () => {
       </Link>
 
       <div className="tool-detail-header">
-        <h1>{tool.name}</h1>
-        <span className={`status-badge status-${tool.status}`}>
-          {tool.status === "new" && "Mới"}
-          {tool.status === "old" && "Cũ"}
-          {tool.status === "usable" && "Sử dụng được"}
-          {tool.status === "unusable" && "Không sử dụng được"}
-        </span>
+        <div>
+          <h1>{tool.name}</h1>
+          <span className={`status-badge status-${tool.status}`}>
+            {tool.status === "new" && "Mới"}
+            {tool.status === "old" && "Cũ"}
+            {tool.status === "usable" && "Sử dụng được"}
+            {tool.status === "unusable" && "Không sử dụng được"}
+          </span>
+        </div>
+        {isAdmin && (
+          <div className="tool-actions">
+            <button className="btn-edit" onClick={() => setShowEditModal(true)}>
+              ✏️ Sửa
+            </button>
+            <button
+              className="btn-transfer"
+              onClick={() => setShowTransferModal(true)}
+            >
+              🔄 Chuyển kho
+            </button>
+            <button
+              className="btn-delete"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              🗑️ Xóa
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="tool-detail-grid">
@@ -240,6 +340,100 @@ export const ToolDetail = () => {
           </div>
         )}
       </div>
+
+      {isAdmin && (
+        <>
+          <Modal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            title="Sửa dụng cụ"
+            size="large"
+          >
+            <ToolForm
+              tool={tool}
+              onSubmit={handleUpdateTool}
+              onCancel={() => setShowEditModal(false)}
+              loading={submitting}
+            />
+          </Modal>
+
+          <ConfirmDialog
+            isOpen={showDeleteDialog}
+            onClose={() => setShowDeleteDialog(false)}
+            onConfirm={handleDeleteTool}
+            title="Xóa dụng cụ"
+            message={`Bạn có chắc chắn muốn xóa dụng cụ "${tool.name}" (${tool.productCode})? Hành động này không thể hoàn tác.`}
+            confirmText="Xóa"
+            cancelText="Hủy"
+            type="danger"
+          />
+
+          <Modal
+            isOpen={showTransferModal}
+            onClose={() => setShowTransferModal(false)}
+            title="Chuyển dụng cụ"
+            size="medium"
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleTransferTool();
+              }}
+            >
+              <div className="form-group">
+                <label>
+                  Vị trí đích <span className="required">*</span>
+                </label>
+                <select
+                  value={transferData.toLocation}
+                  onChange={(e) =>
+                    setTransferData((prev) => ({
+                      ...prev,
+                      toLocation: e.target.value,
+                    }))
+                  }
+                  required
+                >
+                  <option value="">Chọn vị trí...</option>
+                  <option value="warehouse">Kho</option>
+                  <option value="in_use">Đang sử dụng</option>
+                  <option value="maintenance">Bảo trì</option>
+                  <option value="disposed">Đã thanh lý</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Ghi chú</label>
+                <textarea
+                  value={transferData.notes}
+                  onChange={(e) =>
+                    setTransferData((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                  rows="3"
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowTransferModal(false)}
+                  className="btn-cancel"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-submit"
+                >
+                  {submitting ? "Đang chuyển..." : "Chuyển"}
+                </button>
+              </div>
+            </form>
+          </Modal>
+        </>
+      )}
     </div>
   );
 };

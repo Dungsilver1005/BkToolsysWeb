@@ -72,4 +72,25 @@ export const toolService = {
     const response = await api.get("/tools/statistics");
     return response.data;
   },
+
+  /**
+   * Xóa tool
+   * @param {string} id - Tool ID
+   * @returns {Promise}
+   */
+  deleteTool: async (id) => {
+    const response = await api.delete(`/tools/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Chuyển vị trí tool
+   * @param {string} id - Tool ID
+   * @param {Object} data - {toLocation, notes}
+   * @returns {Promise}
+   */
+  transferTool: async (id, data) => {
+    const response = await api.put(`/tools/${id}/transfer`, data);
+    return response.data;
+  },
 };

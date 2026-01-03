@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Card, Table, Typography, Tag, Button } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+import { useToastContext } from "../context/ToastContext";
 import { userService } from "../services/userService";
 import "./Users.css";
 
+const { Title } = Typography;
+
 export const Users = () => {
+  const { showError } = useToastContext();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -13,14 +19,13 @@ export const Users = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    setError("");
     try {
       const response = await userService.getUsers();
       if (response.success) {
         setUsers(response.data || []);
       }
     } catch (err) {
-      setError(
+      showError(
         err.response?.data?.message ||
           "Có lỗi xảy ra khi tải danh sách người dùng"
       );
@@ -29,52 +34,75 @@ export const Users = () => {
     }
   };
 
+  const columns = [
+    {
+      title: "Tên đăng nhập",
+      dataIndex: "username",
+      key: "username",
+    },
+    {
+      title: "Họ tên",
+      dataIndex: "fullName",
+      key: "fullName",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+    },
+    {
+      title: "Phòng ban",
+      dataIndex: "department",
+      key: "department",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Vai trò",
+      dataIndex: "role",
+      key: "role",
+      render: (role) => (
+        <Tag color={role === "admin" ? "red" : "blue"}>
+          {role === "admin" ? "Quản trị viên" : "Người dùng"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <Link to={`/users/${record._id}`}>
+          <Button type="link" icon={<EyeOutlined />}>
+            Xem chi tiết
+          </Button>
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="users">
-      <div className="users-header">
-        <h1>Quản lý người dùng</h1>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {loading ? (
-        <div className="loading">Đang tải...</div>
-      ) : users.length === 0 ? (
-        <div className="empty-state">Chưa có người dùng nào</div>
-      ) : (
-        <div className="users-table-container">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Tên đăng nhập</th>
-                <th>Họ tên</th>
-                <th>Email</th>
-                <th>Phòng ban</th>
-                <th>Vai trò</th>
-                <th>Ngày tạo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user._id}>
-                  <td>{user.username}</td>
-                  <td>{user.fullName || "N/A"}</td>
-                  <td>{user.email}</td>
-                  <td>{user.department || "N/A"}</td>
-                  <td>
-                    <span className={`role-badge role-${user.role}`}>
-                      {user.role === "admin" ? "Quản trị viên" : "Người dùng"}
-                    </span>
-                  </td>
-                  <td>
-                    {new Date(user.createdAt).toLocaleDateString("vi-VN")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card>
+        <Title level={2} style={{ marginBottom: 24 }}>
+          Quản lý người dùng
+        </Title>
+        <Table
+          columns={columns}
+          dataSource={users}
+          rowKey="_id"
+          loading={loading}
+          pagination={{
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} người dùng`,
+          }}
+        />
+      </Card>
     </div>
   );
 };

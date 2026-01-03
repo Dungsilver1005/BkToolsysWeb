@@ -1,76 +1,8 @@
 .users {
-  max-width: 1400px;
-  margin: 0 auto;
+  background: transparent;
 }
 
-.users-header h1 {
-  margin-bottom: 2rem;
-  color: #2c3e50;
-}
-
-.users-table-container {
-  background: white;
+.users .ant-card {
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.users-table thead {
-  background-color: #f8f9fa;
-}
-
-.users-table th {
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #dee2e6;
-}
-
-.users-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.users-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.role-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.role-admin {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.role-user {
-  background-color: #3498db;
-  color: white;
-}
-
-.loading,
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: white;
-  border-radius: 8px;
-  color: #777;
-}
-
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }

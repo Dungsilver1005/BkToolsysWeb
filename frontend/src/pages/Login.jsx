@@ -1,37 +1,35 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Card, Form, Input, Button, Typography, message } from "antd";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import "./Login.css";
 
+const { Title, Text } = Typography;
+
 export const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Nếu đã đăng nhập, redirect về dashboard
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const onFinish = async (values) => {
     setLoading(true);
-
     try {
-      const result = await login(username, password);
+      const result = await login(values.username, values.password);
       if (result.success) {
+        message.success("Đăng nhập thành công");
         navigate("/", { replace: true });
       } else {
-        setError(result.message || "Đăng nhập thất bại");
+        message.error(result.message || "Đăng nhập thất bại");
       }
     } catch (err) {
-      setError("Có lỗi xảy ra, vui lòng thử lại");
+      message.error("Có lỗi xảy ra, vui lòng thử lại");
     } finally {
       setLoading(false);
     }
@@ -39,36 +37,50 @@ export const Login = () => {
 
   return (
     <div className="login-container">
-      <div className="login-box">
-        <h1>Đăng nhập</h1>
-        <form onSubmit={handleSubmit}>
-          {error && <div className="error-message">{error}</div>}
-          <div className="form-group">
-            <label htmlFor="username">Tên đăng nhập</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
+      <Card className="login-card">
+        <div className="login-header">
+          <Title level={2}>Đăng nhập</Title>
+          <Text type="secondary">Hệ thống Quản lý Dụng cụ</Text>
+        </div>
+        <Form
+          name="login"
+          onFinish={onFinish}
+          autoComplete="off"
+          size="large"
+          layout="vertical"
+        >
+          <Form.Item
+            name="username"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên đăng nhập!" },
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="Tên đăng nhập"
               autoFocus
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Mật khẩu</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" disabled={loading} className="btn-login">
-            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-          </button>
-        </form>
-      </div>
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block loading={loading}>
+              Đăng nhập
+            </Button>
+          </Form.Item>
+        </Form>
+        <div className="login-footer">
+          <Text type="secondary">
+            Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+          </Text>
+        </div>
+      </Card>
     </div>
   );
 };

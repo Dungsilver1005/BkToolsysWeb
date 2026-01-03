@@ -36,6 +36,28 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
+   * Đăng ký
+   */
+  const register = async (userData) => {
+    try {
+      const response = await authService.register(userData);
+      if (response.success) {
+        return { success: true, data: response };
+      }
+      return {
+        success: false,
+        message: response.message || "Đăng ký thất bại",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Đăng ký thất bại",
+        errors: error.response?.data?.errors,
+      };
+    }
+  };
+
+  /**
    * Đăng nhập
    */
   const login = async (username, password) => {
@@ -71,6 +93,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    register,
     login,
     logout,
     isAuthenticated: !!user,

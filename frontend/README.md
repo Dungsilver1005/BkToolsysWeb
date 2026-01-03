@@ -58,3 +58,6 @@ src/
 
 - Node.js >= 16
 - Backend phải chạy tại http://localhost:5000
+
+// dungnguyen
+//oDMAvYVkvUu5ZLDa
