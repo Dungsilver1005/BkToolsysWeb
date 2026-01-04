@@ -27,7 +27,7 @@ const toolRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected", "cancelled"],
+    enum: ["pending", "approved", "rejected", "cancelled", "returned"],
     default: "pending",
   },
   reviewedBy: {
@@ -46,6 +46,14 @@ const toolRequestSchema = new mongoose.Schema({
   approvedAt: {
     type: Date,
     default: null,
+  },
+  returnedAt: {
+    type: Date,
+    default: null,
+  },
+  returnNotes: {
+    type: String,
+    trim: true,
   },
   createdAt: {
     type: Date,

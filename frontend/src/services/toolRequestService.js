@@ -76,5 +76,17 @@ export const toolRequestService = {
     const response = await api.put(`/tool-requests/${id}/cancel`);
     return response.data;
   },
-};
 
+  /**
+   * Trả dụng cụ (User only, their own approved requests)
+   * @param {string} id - Request ID
+   * @param {string} returnNotes - Ghi chú khi trả (optional)
+   * @returns {Promise}
+   */
+  returnTool: async (id, returnNotes = "") => {
+    const response = await api.put(`/tool-requests/${id}/return`, {
+      returnNotes,
+    });
+    return response.data;
+  },
+};

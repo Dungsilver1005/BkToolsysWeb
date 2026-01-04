@@ -10,7 +10,7 @@ import {
   Popconfirm,
   message,
 } from "antd";
-import { CloseOutlined, EyeOutlined } from "@ant-design/icons";
+import { CloseOutlined, EyeOutlined, UndoOutlined } from "@ant-design/icons";
 import { useToastContext } from "../context/ToastContext";
 import { toolRequestService } from "../services/toolRequestService";
 import "./MyToolRequests.css";
@@ -23,6 +23,7 @@ export const MyToolRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [returning, setReturning] = useState({});
 
   useEffect(() => {
     fetchRequests();
@@ -59,12 +60,30 @@ export const MyToolRequests = () => {
     }
   };
 
+  const handleReturn = async (requestId) => {
+    setReturning({ ...returning, [requestId]: true });
+    try {
+      const response = await toolRequestService.returnTool(requestId);
+      if (response.success) {
+        showSuccess("Trả dụng cụ thành công");
+        fetchRequests();
+      } else {
+        showError(response.message || "Trả dụng cụ thất bại");
+      }
+    } catch (err) {
+      showError(err.response?.data?.message || "Có lỗi xảy ra khi trả dụng cụ");
+    } finally {
+      setReturning({ ...returning, [requestId]: false });
+    }
+  };
+
   const getStatusTag = (status) => {
     const statusMap = {
       pending: { label: "Chờ duyệt", color: "orange" },
       approved: { label: "Đã duyệt", color: "green" },
       rejected: { label: "Đã từ chối", color: "red" },
       cancelled: { label: "Đã hủy", color: "default" },
+      returned: { label: "Đã trả", color: "blue" },
     };
     const statusInfo = statusMap[status] || { label: status, color: "default" };
     return <Tag color={statusInfo.color}>{statusInfo.label}</Tag>;
@@ -129,7 +148,7 @@ export const MyToolRequests = () => {
     {
       title: "Thao tác",
       key: "action",
-      width: 150,
+      width: 200,
       fixed: "right",
       render: (_, record) => {
         if (record.status === "pending") {
@@ -144,6 +163,27 @@ export const MyToolRequests = () => {
             >
               <Button type="link" danger size="small" icon={<CloseOutlined />}>
                 Hủy yêu cầu
+              </Button>
+            </Popconfirm>
+          );
+        }
+        if (record.status === "approved" && record.tool?.isInUse) {
+          return (
+            <Popconfirm
+              title="Trả dụng cụ này?"
+              description="Bạn có chắc chắn muốn trả dụng cụ về kho?"
+              onConfirm={() => handleReturn(record._id)}
+              okText="Trả"
+              cancelText="Hủy"
+              okButtonProps={{ loading: returning[record._id] }}
+            >
+              <Button
+                type="primary"
+                size="small"
+                icon={<UndoOutlined />}
+                loading={returning[record._id]}
+              >
+                Trả dụng cụ
               </Button>
             </Popconfirm>
           );
@@ -178,6 +218,7 @@ export const MyToolRequests = () => {
               <Option value="approved">Đã duyệt</Option>
               <Option value="rejected">Đã từ chối</Option>
               <Option value="cancelled">Đã hủy</Option>
+              <Option value="returned">Đã trả</Option>
             </Select>
           </div>
 

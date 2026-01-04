@@ -379,4 +379,87 @@ router.put("/:id/cancel", protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/tool-requests/:id/return
+// @desc    Return tool (User only, their own approved requests)
+// @access  Private
+router.put("/:id/return", protect, async (req, res) => {
+  try {
+    const { returnNotes } = req.body;
+    const request = await ToolRequest.findById(req.params.id).populate("tool");
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy yêu cầu",
+      });
+    }
+
+    // User can only return their own requests
+    if (request.requestedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền trả dụng cụ này",
+      });
+    }
+
+    // Only approved requests can be returned
+    if (request.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể trả dụng cụ từ yêu cầu đã được duyệt",
+      });
+    }
+
+    const tool = await Tool.findById(request.tool._id);
+
+    // Check if tool is actually assigned to this user
+    if (
+      !tool.isInUse ||
+      tool.currentUser?.toString() !== req.user._id.toString()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Dụng cụ không được gán cho bạn hoặc đã được trả",
+      });
+    }
+
+    // Update tool status
+    tool.isInUse = false;
+    tool.currentUser = null;
+    tool.location = "warehouse";
+    tool.history.push({
+      action: "import",
+      user: req.user._id,
+      fromLocation: "in_use",
+      toLocation: "warehouse",
+      notes: returnNotes || "Người dùng trả dụng cụ",
+      date: new Date(),
+    });
+    await tool.save();
+
+    // Update request status
+    request.status = "returned";
+    request.returnedAt = new Date();
+    request.returnNotes = returnNotes || "";
+    await request.save();
+
+    const populatedRequest = await ToolRequest.findById(request._id)
+      .populate("tool", "name productCode")
+      .populate("requestedBy", "username fullName");
+
+    res.json({
+      success: true,
+      message: "Trả dụng cụ thành công",
+      data: populatedRequest,
+    });
+  } catch (error) {
+    console.error("Return tool error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;
