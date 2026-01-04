@@ -1,30 +1,23 @@
 import axios from "axios";
 
 // Tạo axios instance với base URL
-// Lưu ý: Trong production, phải set VITE_API_BASE_URL trong biến môi trường
 const getBaseURL = () => {
-  // Nếu có biến môi trường, dùng nó (ưu tiên cao nhất)
+  // Ưu tiên 1: Dùng biến môi trường nếu có (đã set trong Vercel)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  // Production: luôn dùng Render backend URL
-  // Kiểm tra PROD mode hoặc không phải DEV mode
-  if (import.meta.env.PROD || !import.meta.env.DEV) {
-    return "https://bktoolsysweb-1.onrender.com/api";
+  // Ưu tiên 2: Kiểm tra hostname để xác định môi trường
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+
+    // Nếu đang chạy trên localhost → dùng localhost backend
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:5000/api";
+    }
   }
 
-  // Development local: chỉ dùng localhost khi thực sự chạy local
-  // Kiểm tra hostname để đảm bảo đang chạy trên localhost
-  if (
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
-  ) {
-    return "http://localhost:5000/api";
-  }
-
-  // Fallback: dùng Render backend URL (an toàn hơn)
+  // Mặc định: Dùng Render backend URL (production)
   return "https://bktoolsysweb-1.onrender.com/api";
 };
 
