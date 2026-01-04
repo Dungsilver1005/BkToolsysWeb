@@ -22,6 +22,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
+import { Logo } from "./Logo";
 import "./Layout.css";
 
 const { Header, Sider, Content } = AntLayout;
@@ -146,11 +147,7 @@ export const Layout = ({ children }) => {
         }}
       >
         <div className="logo">
-          {collapsed ? (
-            <div className="logo-icon">🔧</div>
-          ) : (
-            <div className="logo-text">Quản lý Dụng cụ</div>
-          )}
+          <Logo collapsed={collapsed} size="medium" />
         </div>
         <Menu
           theme="dark"

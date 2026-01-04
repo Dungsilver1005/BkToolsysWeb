@@ -1,0 +1,203 @@
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  height: 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-collapsed {
+  padding: 16px 8px;
+}
+
+.logo-icon-simple {
+  font-size: 28px;
+  color: #1890ff;
+}
+
+.logo-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-image {
+  max-width: 100%;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.logo-css-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.logo-tools {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 32px;
+}
+
+.tool {
+  position: relative;
+  background-color: #fff;
+  border-radius: 2px;
+}
+
+.tool::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 4px;
+  height: 4px;
+  background-color: #fff;
+  border-radius: 1px;
+}
+
+.tool-1 {
+  width: 8px;
+  height: 24px;
+  background-color: #4caf50;
+}
+
+.tool-2 {
+  width: 8px;
+  height: 18px;
+  background-color: #ff9800;
+}
+
+.tool-3 {
+  width: 8px;
+  height: 28px;
+  background-color: #2196f3;
+}
+
+.tool-stripes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.3) 2px,
+    rgba(255, 255, 255, 0.3) 4px
+  );
+}
+
+.tool-1 .tool-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.4) 2px,
+    rgba(255, 255, 255, 0.4) 4px
+  );
+}
+
+.tool-2 .tool-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.4) 2px,
+    rgba(255, 255, 255, 0.4) 4px
+  );
+}
+
+.tool-3 .tool-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.4) 2px,
+    rgba(255, 255, 255, 0.4) 4px
+  );
+}
+
+.logo-base {
+  background-color: #d32f2f;
+  padding: 4px 12px;
+  border-radius: 4px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-text {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Kích thước khác nhau */
+.logo-small .logo-tools {
+  height: 24px;
+  gap: 6px;
+}
+
+.logo-small .tool-1 {
+  width: 6px;
+  height: 18px;
+}
+
+.logo-small .tool-2 {
+  width: 6px;
+  height: 14px;
+}
+
+.logo-small .tool-3 {
+  width: 6px;
+  height: 22px;
+}
+
+.logo-small .logo-base {
+  padding: 3px 10px;
+  height: 16px;
+}
+
+.logo-small .logo-text {
+  font-size: 10px;
+}
+
+.logo-large .logo-tools {
+  height: 40px;
+  gap: 10px;
+}
+
+.logo-large .tool-1 {
+  width: 10px;
+  height: 30px;
+}
+
+.logo-large .tool-2 {
+  width: 10px;
+  height: 24px;
+}
+
+.logo-large .tool-3 {
+  width: 10px;
+  height: 36px;
+}
+
+.logo-large .logo-base {
+  padding: 5px 14px;
+  height: 24px;
+}
+
+.logo-large .logo-text {
+  font-size: 14px;
+}

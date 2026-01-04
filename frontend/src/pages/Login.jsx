@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Card, Form, Input, Button, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
+import { Logo } from "../components/Logo";
 import "./Login.css";
 
 const { Title, Text } = Typography;
@@ -39,6 +40,9 @@ export const Login = () => {
     <div className="login-container">
       <Card className="login-card">
         <div className="login-header">
+          <div className="login-logo">
+            <Logo size="large" />
+          </div>
           <Title level={2}>Đăng nhập</Title>
           <Text type="secondary">Hệ thống Quản lý Dụng cụ</Text>
         </div>
