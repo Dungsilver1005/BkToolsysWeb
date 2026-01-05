@@ -12,10 +12,36 @@ export const Logo = ({ collapsed = false, size = "medium" }) => {
   const logoPath = "/assets/logo.png"; // Đường dẫn logo trong public folder
 
   if (collapsed) {
-    // Khi sidebar collapsed, chỉ hiển thị icon đơn giản
+    // Khi sidebar collapsed, vẫn hiển thị logo BKTOOLSYS thu gọn
     return (
       <div className="logo-container logo-collapsed">
-        <div className="logo-icon-simple">🔧</div>
+        <div className="logo-wrapper">
+          {!imageError ? (
+            <img
+              src={logoPath}
+              alt="BKTOOLSYS Logo"
+              className="logo-image logo-image-collapsed"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="logo-css-fallback logo-collapsed-fallback">
+              <div className="logo-tools logo-tools-collapsed">
+                <div className="tool tool-1 tool-collapsed">
+                  <div className="tool-stripes"></div>
+                </div>
+                <div className="tool tool-2 tool-collapsed">
+                  <div className="tool-stripes"></div>
+                </div>
+                <div className="tool tool-3 tool-collapsed">
+                  <div className="tool-stripes"></div>
+                </div>
+              </div>
+              <div className="logo-base logo-base-collapsed">
+                <span className="logo-text logo-text-collapsed">BKTOOLSYS</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

@@ -8,12 +8,51 @@
 }
 
 .logo-collapsed {
-  padding: 16px 8px;
+  padding: 12px 8px;
+  height: 64px;
 }
 
-.logo-icon-simple {
-  font-size: 28px;
-  color: #1890ff;
+.logo-image-collapsed {
+  max-height: 40px;
+}
+
+.logo-collapsed-fallback {
+  gap: 3px;
+}
+
+.logo-tools-collapsed {
+  height: 20px;
+  gap: 4px;
+}
+
+.tool-collapsed {
+  border-radius: 1px;
+}
+
+.tool-collapsed.tool-1 {
+  width: 5px;
+  height: 16px;
+}
+
+.tool-collapsed.tool-2 {
+  width: 5px;
+  height: 12px;
+}
+
+.tool-collapsed.tool-3 {
+  width: 5px;
+  height: 18px;
+}
+
+.logo-base-collapsed {
+  padding: 2px 6px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.logo-text-collapsed {
+  font-size: 8px;
+  letter-spacing: 0.3px;
 }
 
 .logo-wrapper {
