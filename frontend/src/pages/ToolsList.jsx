@@ -80,7 +80,22 @@ export const ToolsList = () => {
   const fetchTools = async () => {
     setLoading(true);
     try {
-      const response = await toolService.getTools(filters);
+      // Map filter status từ UI sang backend
+      const backendFilters = { ...filters };
+      if (backendFilters.status === "in_use") {
+        backendFilters.isInUse = "true";
+        delete backendFilters.status;
+      } else if (backendFilters.status === "unusable") {
+        backendFilters.status = "unusable";
+      } else if (backendFilters.status === "disposed") {
+        backendFilters.location = "disposed";
+        delete backendFilters.status;
+      } else if (backendFilters.status === "removed") {
+        backendFilters.location = "maintenance";
+        delete backendFilters.status;
+      }
+
+      const response = await toolService.getTools(backendFilters);
       if (response.success) {
         setTools(response.data || []);
         setPagination({
@@ -148,15 +163,25 @@ export const ToolsList = () => {
     return true;
   };
 
-  const getStatusTag = (status) => {
-    const statusMap = {
-      new: { label: "Mới", color: "blue" },
-      old: { label: "Cũ", color: "default" },
-      usable: { label: "Sử dụng được", color: "success" },
-      unusable: { label: "Không sử dụng được", color: "error" },
-    };
-    const statusInfo = statusMap[status] || { label: status, color: "default" };
-    return <Tag color={statusInfo.color}>{statusInfo.label}</Tag>;
+  const getStatusTag = (record) => {
+    // Đang được sử dụng: isInUse = true
+    if (record.isInUse) {
+      return <Tag color="blue">Đang được sử dụng</Tag>;
+    }
+    // Không sử dụng được: status = unusable
+    if (record.status === "unusable") {
+      return <Tag color="error">Không sử dụng được</Tag>;
+    }
+    // Đã thanh lý: location = disposed
+    if (record.location === "disposed") {
+      return <Tag color="default">Đã thanh lý</Tag>;
+    }
+    // Đã loại bỏ: location = maintenance hoặc status = old
+    if (record.location === "maintenance" || record.status === "old") {
+      return <Tag color="orange">Đã loại bỏ</Tag>;
+    }
+    // Mặc định: Sử dụng được
+    return <Tag color="success">Sử dụng được</Tag>;
   };
 
   const columns = [
@@ -172,35 +197,19 @@ export const ToolsList = () => {
       ),
     },
     {
-      title: "Tên dụng cụ",
-      dataIndex: "name",
-      key: "name",
-      render: (text, record) => <Link to={`/tools/${record._id}`}>{text}</Link>,
-    },
-    {
-      title: "Danh mục",
+      title: "Loại dụng cụ",
       dataIndex: "category",
       key: "category",
-      width: 150,
-      render: (text) => text || "N/A",
+      width: 200,
+      render: (text, record) => (
+        <Link to={`/tools/${record._id}`}>{text || "N/A"}</Link>
+      ),
     },
     {
       title: "Trạng thái",
-      dataIndex: "status",
       key: "status",
-      width: 150,
-      render: (status) => getStatusTag(status),
-    },
-    {
-      title: "Tình trạng",
-      dataIndex: "isInUse",
-      key: "isInUse",
-      width: 120,
-      render: (isInUse) => (
-        <Tag color={isInUse ? "red" : "green"}>
-          {isInUse ? "Đang sử dụng" : "Có sẵn"}
-        </Tag>
-      ),
+      width: 180,
+      render: (_, record) => getStatusTag(record),
     },
     {
       title: "Vị trí",
@@ -286,7 +295,16 @@ export const ToolsList = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} md={8} lg={6}>
                 <Input
-                  placeholder="Tìm kiếm..."
+                  placeholder="Tìm kiếm theo tên loại dụng cụ..."
+                  prefix={<SearchOutlined />}
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange("category", e.target.value)}
+                  allowClear
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={6}>
+                <Input
+                  placeholder="Tìm kiếm mã sản phẩm..."
                   prefix={<SearchOutlined />}
                   value={filters.search}
                   onChange={(e) => handleFilterChange("search", e.target.value)}
@@ -301,22 +319,10 @@ export const ToolsList = () => {
                   allowClear
                   style={{ width: "100%" }}
                 >
-                  <Option value="new">Mới</Option>
-                  <Option value="old">Cũ</Option>
-                  <Option value="usable">Sử dụng được</Option>
+                  <Option value="in_use">Đang được sử dụng</Option>
                   <Option value="unusable">Không sử dụng được</Option>
-                </Select>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Select
-                  placeholder="Tình trạng sử dụng"
-                  value={filters.isInUse || undefined}
-                  onChange={(value) => handleFilterChange("isInUse", value)}
-                  allowClear
-                  style={{ width: "100%" }}
-                >
-                  <Option value="true">Đang sử dụng</Option>
-                  <Option value="false">Chưa sử dụng</Option>
+                  <Option value="disposed">Đã thanh lý</Option>
+                  <Option value="removed">Đã loại bỏ</Option>
                 </Select>
               </Col>
               <Col xs={24} sm={12} md={8} lg={6}>
@@ -332,16 +338,6 @@ export const ToolsList = () => {
                   <Option value="maintenance">Bảo trì</Option>
                   <Option value="disposed">Đã thanh lý</Option>
                 </Select>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Input
-                  placeholder="Danh mục..."
-                  value={filters.category}
-                  onChange={(e) =>
-                    handleFilterChange("category", e.target.value)
-                  }
-                  allowClear
-                />
               </Col>
             </Row>
           </Card>

@@ -1,0 +1,14 @@
+.profile-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.profile-page .ant-descriptions-item-label {
+  font-weight: 500;
+}
+
+.profile-page .ant-statistic-title {
+  font-size: 14px;
+  color: #8c8c8c;
+}
+

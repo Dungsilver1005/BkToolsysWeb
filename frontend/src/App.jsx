@@ -14,6 +14,8 @@ import { Users } from "./pages/Users";
 import { UserDetail } from "./pages/UserDetail";
 import { ToolRequests } from "./pages/ToolRequests";
 import { MyToolRequests } from "./pages/MyToolRequests";
+import { Profile } from "./pages/Profile";
+import { Settings } from "./pages/Settings";
 
 function App() {
   return (
@@ -126,6 +128,26 @@ function App() {
           <ProtectedRoute requireAdmin>
             <Layout>
               <ToolRequests />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Profile />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Settings />
             </Layout>
           </ProtectedRoute>
         }

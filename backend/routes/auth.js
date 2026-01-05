@@ -189,4 +189,65 @@ router.get("/me", protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.put(
+  "/change-password",
+  protect,
+  [
+    body("currentPassword").notEmpty().withMessage("Vui lòng nhập mật khẩu hiện tại"),
+    body("newPassword")
+      .isLength({ min: 6 })
+      .withMessage("Mật khẩu mới phải có ít nhất 6 ký tự"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+      });
+    }
+
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      // Get user with password
+      const user = await User.findById(req.user._id).select("+password");
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy người dùng",
+        });
+      }
+
+      // Check current password
+      const isMatch = await user.matchPassword(currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Mật khẩu hiện tại không đúng",
+        });
+      }
+
+      // Update password
+      user.password = newPassword;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: "Đổi mật khẩu thành công",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server",
+        error: error.message,
+      });
+    }
+  }
+);
+
 module.exports = router;

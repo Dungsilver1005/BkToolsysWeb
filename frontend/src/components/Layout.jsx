@@ -91,14 +91,12 @@ export const Layout = ({ children }) => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Thông tin cá nhân",
-      disabled: true,
+      label: <Link to="/profile">Thông tin cá nhân</Link>,
     },
     {
       key: "settings",
       icon: <SettingOutlined />,
-      label: "Cài đặt",
-      disabled: true,
+      label: <Link to="/settings">Cài đặt</Link>,
     },
     {
       type: "divider",
@@ -188,29 +186,42 @@ export const Layout = ({ children }) => {
               Hệ thống Quản lý Dụng cụ
             </Text>
           </div>
-          <Space size="middle">
-            <Badge count={0} showZero>
-              <Avatar
-                style={{ backgroundColor: "#1890ff", cursor: "pointer" }}
-                icon={<UserOutlined />}
-              />
-            </Badge>
-            <Dropdown
-              menu={{ items: userMenuItems }}
-              placement="bottomRight"
-              arrow
+          <div className="header-user-section">
+            <Badge
+              count={0}
+              showZero={false}
+              offset={[-2, 2]}
+              className="notification-badge"
             >
-              <Space style={{ cursor: "pointer" }}>
-                <div style={{ textAlign: "right" }}>
-                  <Text strong>{user?.fullName || user?.username}</Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {isAdmin ? "Quản trị viên" : "Người dùng"}
-                  </Text>
+              <Dropdown
+                menu={{ items: userMenuItems }}
+                placement="bottomRight"
+                trigger={["click"]}
+                popupClassName="user-dropdown-menu"
+              >
+                <div className="user-profile-trigger">
+                  <Avatar
+                    size={32}
+                    className="user-avatar"
+                    style={{
+                      backgroundColor: "#1890ff",
+                      border: "2px solid #fff",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                    }}
+                    icon={<UserOutlined />}
+                  />
+                  <div className="user-info">
+                    <div className="user-name">
+                      {user?.fullName || user?.username}
+                    </div>
+                    <div className="user-role">
+                      {isAdmin ? "Quản trị viên" : "Người dùng"}
+                    </div>
+                  </div>
                 </div>
-              </Space>
-            </Dropdown>
-          </Space>
+              </Dropdown>
+            </Badge>
+          </div>
         </Header>
         <Content
           className="admin-content"

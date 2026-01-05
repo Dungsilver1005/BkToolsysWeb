@@ -56,6 +56,130 @@
   min-height: calc(100vh - 112px);
 }
 
+/* User Profile Section - YouTube Style */
+.header-user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+}
+
+.user-profile-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.user-profile-trigger:hover .user-avatar {
+  transform: scale(1.05);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #606060;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.notification-badge .ant-badge-count {
+  background: #ff0000;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 12px;
+  padding: 0 4px;
+}
+
+.notification-badge .ant-badge-count.ant-badge-count-zero {
+  display: none;
+}
+
+/* Dropdown Menu - YouTube Style */
+.user-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 8px 0;
+  min-width: 220px;
+  margin-top: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.user-dropdown-menu .ant-dropdown-menu-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 4px;
+  border-radius: 8px;
+}
+
+.user-dropdown-menu .ant-dropdown-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-dropdown-menu
+  .ant-dropdown-menu-item.ant-dropdown-menu-item-danger:hover {
+  background-color: rgba(255, 77, 79, 0.1);
+  color: #ff4d4f;
+}
+
+.user-dropdown-menu .ant-dropdown-menu-item-icon {
+  font-size: 16px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-dropdown-menu .ant-dropdown-menu-item-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-dropdown-menu .ant-dropdown-menu-item-disabled:hover {
+  background-color: transparent;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .admin-sidebar {
@@ -65,5 +189,29 @@
 
   .site-layout {
     margin-left: 0 !important;
+  }
+
+  .user-name,
+  .user-role {
+    max-width: 100px;
+  }
+
+  .header-user-section {
+    gap: 8px;
+  }
+
+  .user-profile-trigger {
+    gap: 8px;
+    padding: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-info {
+    display: none;
+  }
+
+  .user-profile-trigger {
+    padding: 4px;
   }
 }
