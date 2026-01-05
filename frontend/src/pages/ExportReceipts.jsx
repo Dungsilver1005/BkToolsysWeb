@@ -1,27 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Card,
-  Table,
-  Button,
-  Typography,
-  Space,
-  Tag,
-  Modal,
-  Form,
-  Input,
-  Select,
-  InputNumber,
-} from "antd";
-import { PlusOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useToastContext } from "../context/ToastContext";
 import { exportReceiptService } from "../services/exportReceiptService";
 import { toolService } from "../services/toolService";
+import { Modal } from "../components/Modal";
 import "./ExportReceipts.css";
-
-const { Title } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
 
 export const ExportReceipts = () => {
   const { showSuccess, showError } = useToastContext();
@@ -30,7 +13,12 @@ export const ExportReceipts = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [availableTools, setAvailableTools] = useState([]);
-  const [form] = Form.useForm();
+  const [formData, setFormData] = useState({
+    purpose: "",
+    department: "",
+    notes: "",
+    tools: [{ tool: "", quantity: 1, notes: "" }],
+  });
 
   useEffect(() => {
     fetchReceipts();
@@ -39,9 +27,11 @@ export const ExportReceipts = () => {
   useEffect(() => {
     if (showCreateModal) {
       fetchAvailableTools();
-      form.resetFields();
-      form.setFieldsValue({
-        tools: [{ tool: undefined, quantity: 1, notes: "" }],
+      setFormData({
+        purpose: "",
+        department: "",
+        notes: "",
+        tools: [{ tool: "", quantity: 1, notes: "" }],
       });
     }
   }, [showCreateModal]);
@@ -78,14 +68,23 @@ export const ExportReceipts = () => {
     }
   };
 
-  const handleCreateReceipt = async (values) => {
+  const handleCreateReceipt = async (e) => {
+    e.preventDefault();
+    if (!formData.purpose || !formData.department) {
+      showError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+    if (formData.tools.some((t) => !t.tool || !t.quantity)) {
+      showError("Vui lòng chọn dụng cụ và số lượng");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const response = await exportReceiptService.createExportReceipt(values);
+      const response = await exportReceiptService.createExportReceipt(formData);
       if (response.success) {
         showSuccess("Tạo phiếu xuất kho thành công");
         setShowCreateModal(false);
-        form.resetFields();
         fetchReceipts();
       } else {
         showError(response.message || "Tạo phiếu xuất kho thất bại");
@@ -99,209 +98,242 @@ export const ExportReceipts = () => {
     }
   };
 
-  const getStatusTag = (status) => {
-    const statusMap = {
-      pending: { label: "Chờ xử lý", color: "orange" },
-      completed: { label: "Hoàn thành", color: "green" },
-      cancelled: { label: "Đã hủy", color: "red" },
-    };
-    const statusInfo = statusMap[status] || { label: status, color: "default" };
-    return <Tag color={statusInfo.color}>{statusInfo.label}</Tag>;
+  const addToolRow = () => {
+    setFormData({
+      ...formData,
+      tools: [...formData.tools, { tool: "", quantity: 1, notes: "" }],
+    });
   };
 
-  const columns = [
-    {
-      title: "Mã phiếu",
-      dataIndex: "receiptNumber",
-      key: "receiptNumber",
-      width: 150,
-    },
-    {
-      title: "Ngày xuất",
-      dataIndex: "exportDate",
-      key: "exportDate",
-      width: 120,
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
-    },
-    {
-      title: "Người xuất",
-      key: "exportedBy",
-      render: (_, record) =>
-        record.exportedBy?.fullName || record.exportedBy?.username || "N/A",
-    },
-    {
-      title: "Số lượng dụng cụ",
-      key: "toolsCount",
-      width: 150,
-      render: (_, record) => record.tools?.length || 0,
-    },
-    {
-      title: "Mục đích",
-      dataIndex: "purpose",
-      key: "purpose",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Phòng ban",
-      dataIndex: "department",
-      key: "department",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      render: (status) => getStatusTag(status),
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 120,
-      render: (_, record) => (
-        <Link to={`/export-receipts/${record._id}`}>
-          <Button type="link" icon={<EyeOutlined />}>
-            Xem chi tiết
-          </Button>
-        </Link>
-      ),
-    },
-  ];
+  const removeToolRow = (index) => {
+    if (formData.tools.length > 1) {
+      setFormData({
+        ...formData,
+        tools: formData.tools.filter((_, i) => i !== index),
+      });
+    }
+  };
+
+  const updateToolRow = (index, field, value) => {
+    const newTools = [...formData.tools];
+    newTools[index] = { ...newTools[index], [field]: value };
+    setFormData({ ...formData, tools: newTools });
+  };
+
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      pending: { label: "Chờ xử lý", className: "status-badge status-badge-yellow" },
+      completed: { label: "Hoàn thành", className: "status-badge status-badge-green" },
+      cancelled: { label: "Đã hủy", className: "status-badge status-badge-red" },
+    };
+    const statusInfo = statusMap[status] || statusMap.pending;
+    return (
+      <span className={statusInfo.className}>
+        <span className="status-dot"></span>
+        {statusInfo.label}
+      </span>
+    );
+  };
 
   return (
-    <div className="export-receipts">
-      <Card>
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Title level={2} style={{ margin: 0 }}>
-              Phiếu xuất kho
-            </Title>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setShowCreateModal(true)}
-              size="large"
-            >
-              Tạo phiếu xuất kho
-            </Button>
+    <div className="export-receipts-page">
+      <div className="export-receipts-content">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Phiếu xuất kho</h1>
+            <p className="page-subtitle">Quản lý các phiếu xuất kho dụng cụ</p>
           </div>
+          <button
+            className="btn-add-tool"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <span className="material-symbols-outlined">add</span>
+            <span>Tạo phiếu xuất kho</span>
+          </button>
+        </div>
 
-          <Table
-            columns={columns}
-            dataSource={receipts}
-            rowKey="_id"
-            loading={loading}
-            pagination={{
-              showSizeChanger: true,
-              showTotal: (total) => `Tổng ${total} phiếu`,
-            }}
-            scroll={{ x: 1000 }}
-          />
-        </Space>
-      </Card>
+        <div className="table-card">
+          <div className="table-wrapper">
+            <table className="receipts-table">
+              <thead>
+                <tr>
+                  <th>Mã phiếu</th>
+                  <th>Ngày xuất</th>
+                  <th>Người xuất</th>
+                  <th>Số lượng dụng cụ</th>
+                  <th>Mục đích</th>
+                  <th>Phòng ban</th>
+                  <th>Trạng thái</th>
+                  <th className="text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="text-center loading-cell">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : receipts.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="text-center empty-cell">
+                      Không có phiếu xuất kho nào
+                    </td>
+                  </tr>
+                ) : (
+                  receipts.map((receipt) => (
+                    <tr key={receipt._id} className="table-row">
+                      <td className="receipt-code">{receipt.receiptNumber || "N/A"}</td>
+                      <td>
+                        {receipt.exportDate
+                          ? new Date(receipt.exportDate).toLocaleDateString("vi-VN")
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {receipt.exportedBy?.fullName ||
+                          receipt.exportedBy?.username ||
+                          "N/A"}
+                      </td>
+                      <td>{receipt.tools?.length || 0}</td>
+                      <td className="text-muted">{receipt.purpose || "N/A"}</td>
+                      <td>{receipt.department || "N/A"}</td>
+                      <td>{getStatusBadge(receipt.status)}</td>
+                      <td className="text-right">
+                        <div className="action-buttons">
+                          <Link
+                            to={`/export-receipts/${receipt._id}`}
+                            className="action-btn"
+                            title="Xem chi tiết"
+                          >
+                            <span className="material-symbols-outlined">visibility</span>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
         title="Tạo phiếu xuất kho"
-        open={showCreateModal}
-        onCancel={() => setShowCreateModal(false)}
-        footer={null}
-        width={800}
+        size="large"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleCreateReceipt}
-          initialValues={{
-            tools: [{ tool: undefined, quantity: 1, notes: "" }],
-          }}
-        >
-          <Form.Item name="purpose" label="Mục đích">
-            <Input placeholder="Nhập mục đích xuất kho" />
-          </Form.Item>
+        <form onSubmit={handleCreateReceipt} className="create-receipt-form">
+          <div className="form-group">
+            <label>
+              Mục đích <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.purpose}
+              onChange={(e) =>
+                setFormData({ ...formData, purpose: e.target.value })
+              }
+              placeholder="Nhập mục đích xuất kho"
+              required
+            />
+          </div>
 
-          <Form.Item name="department" label="Phòng ban">
-            <Input placeholder="Nhập phòng ban" />
-          </Form.Item>
+          <div className="form-group">
+            <label>
+              Phòng ban <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.department}
+              onChange={(e) =>
+                setFormData({ ...formData, department: e.target.value })
+              }
+              placeholder="Nhập phòng ban"
+              required
+            />
+          </div>
 
-          <Form.List name="tools">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <Space
-                    key={key}
-                    style={{ display: "flex", marginBottom: 8 }}
-                    align="baseline"
+          <div className="form-group">
+            <label>Dụng cụ <span className="required">*</span></label>
+            {formData.tools.map((toolRow, index) => (
+              <div key={index} className="tool-row">
+                <select
+                  value={toolRow.tool}
+                  onChange={(e) => updateToolRow(index, "tool", e.target.value)}
+                  required
+                  className="tool-select"
+                >
+                  <option value="">Chọn dụng cụ</option>
+                  {availableTools.map((tool) => (
+                    <option key={tool._id} value={tool._id}>
+                      {tool.productCode} - {tool.category || tool.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  value={toolRow.quantity}
+                  onChange={(e) =>
+                    updateToolRow(index, "quantity", parseInt(e.target.value) || 1)
+                  }
+                  placeholder="SL"
+                  required
+                  className="quantity-input"
+                />
+                <input
+                  type="text"
+                  value={toolRow.notes}
+                  onChange={(e) => updateToolRow(index, "notes", e.target.value)}
+                  placeholder="Ghi chú"
+                  className="notes-input"
+                />
+                {formData.tools.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-remove"
+                    onClick={() => removeToolRow(index)}
                   >
-                    <Form.Item
-                      {...restField}
-                      name={[name, "tool"]}
-                      rules={[
-                        { required: true, message: "Vui lòng chọn dụng cụ!" },
-                      ]}
-                      style={{ width: 300 }}
-                    >
-                      <Select placeholder="Chọn dụng cụ">
-                        {availableTools.map((tool) => (
-                          <Option key={tool._id} value={tool._id}>
-                            {tool.productCode} - {tool.name}
-                          </Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      name={[name, "quantity"]}
-                      rules={[{ required: true, message: "Nhập số lượng!" }]}
-                      style={{ width: 100 }}
-                    >
-                      <InputNumber min={1} placeholder="SL" />
-                    </Form.Item>
-                    <Form.Item {...restField} name={[name, "notes"]}>
-                      <Input placeholder="Ghi chú" style={{ width: 200 }} />
-                    </Form.Item>
-                    {fields.length > 1 && (
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(name)}
-                      />
-                    )}
-                  </Space>
-                ))}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    block
-                    icon={<PlusOutlined />}
-                  >
-                    Thêm dụng cụ
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-add-row"
+              onClick={addToolRow}
+            >
+              <span className="material-symbols-outlined">add</span>
+              Thêm dụng cụ
+            </button>
+          </div>
 
-          <Form.Item name="notes" label="Ghi chú">
-            <TextArea rows={3} placeholder="Nhập ghi chú (nếu có)" />
-          </Form.Item>
+          <div className="form-group">
+            <label>Ghi chú</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows="3"
+              placeholder="Nhập ghi chú (nếu có)"
+            />
+          </div>
 
-          <Form.Item>
-            <Space>
-              <Button onClick={() => setShowCreateModal(false)}>Hủy</Button>
-              <Button type="primary" htmlType="submit" loading={submitting}>
-                Tạo phiếu
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={() => setShowCreateModal(false)}
+            >
+              Hủy
+            </button>
+            <button type="submit" className="btn-submit" disabled={submitting}>
+              {submitting ? "Đang tạo..." : "Tạo phiếu"}
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

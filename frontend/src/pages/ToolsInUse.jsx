@@ -1,23 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Popconfirm,
-  message,
-} from "antd";
-import { UndoOutlined } from "@ant-design/icons";
 import { toolService } from "../services/toolService";
 import { toolRequestService } from "../services/toolRequestService";
 import { useAuth } from "../context/AuthContext";
 import { useToastContext } from "../context/ToastContext";
 import "./ToolsInUse.css";
-
-const { Title } = Typography;
 
 export const ToolsInUse = () => {
   const { user } = useAuth();
@@ -50,14 +37,12 @@ export const ToolsInUse = () => {
   const handleReturnTool = async (tool) => {
     setReturning({ ...returning, [tool._id]: true });
     try {
-      // Tìm yêu cầu đã approved cho tool này của user hiện tại
       const requestsResponse = await toolRequestService.getRequests({
         tool: tool._id,
         status: "approved",
       });
 
       if (requestsResponse.success && requestsResponse.data?.length > 0) {
-        // Lấy yêu cầu đầu tiên (nên chỉ có 1 yêu cầu approved cho 1 tool)
         const request = requestsResponse.data[0];
         const response = await toolRequestService.returnTool(request._id);
         if (response.success) {
@@ -67,8 +52,6 @@ export const ToolsInUse = () => {
           showError(response.message || "Trả dụng cụ thất bại");
         }
       } else {
-        // Nếu không tìm thấy request, vẫn cho phép trả dụng cụ trực tiếp
-        // (trường hợp dụng cụ được gán qua export receipt)
         showError("Không tìm thấy yêu cầu liên quan. Vui lòng liên hệ admin.");
       }
     } catch (err) {
@@ -79,107 +62,122 @@ export const ToolsInUse = () => {
   };
 
   const isMyTool = (tool) => {
+    const userId = user?.id || user?._id;
     return (
-      tool.currentUser?._id === user?._id || tool.currentUser === user?._id
+      tool.currentUser?._id?.toString() === userId?.toString() ||
+      tool.currentUser?.toString() === userId?.toString() ||
+      tool.currentUser === userId
     );
   };
 
-  const columns = [
-    {
-      title: "Tên dụng cụ",
-      key: "name",
-      width: 200,
-      render: (_, record) => (
-        <Link to={`/tools/${record._id}`} style={{ fontWeight: 600 }}>
-          {record.name}
-        </Link>
-      ),
-    },
-    {
-      title: "Mã sản phẩm",
-      dataIndex: "productCode",
-      key: "productCode",
-      width: 150,
-    },
-    {
-      title: "Danh mục",
-      dataIndex: "category",
-      key: "category",
-      width: 150,
-    },
-    {
-      title: "Người sử dụng",
-      key: "currentUser",
-      width: 150,
-      render: (_, record) =>
-        record.currentUser?.fullName || record.currentUser?.username || "N/A",
-    },
-    {
-      title: "Số lần sử dụng",
-      dataIndex: "usageCount",
-      key: "usageCount",
-      width: 120,
-    },
-    {
-      title: "Lần sử dụng cuối",
-      key: "lastUsedDate",
-      width: 150,
-      render: (_, record) =>
-        record.lastUsedDate
-          ? new Date(record.lastUsedDate).toLocaleString("vi-VN")
-          : "N/A",
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 150,
-      fixed: "right",
-      render: (_, record) => {
-        if (isMyTool(record)) {
-          return (
-            <Popconfirm
-              title="Trả dụng cụ này?"
-              description="Bạn có chắc chắn muốn trả dụng cụ về kho?"
-              onConfirm={() => handleReturnTool(record)}
-              okText="Trả"
-              cancelText="Hủy"
-              okButtonProps={{ loading: returning[record._id] }}
-            >
-              <Button
-                type="primary"
-                size="small"
-                icon={<UndoOutlined />}
-                loading={returning[record._id]}
-              >
-                Trả dụng cụ
-              </Button>
-            </Popconfirm>
-          );
-        }
-        return null;
-      },
-    },
-  ];
+  const getToolIcon = (category) => {
+    if (category?.toLowerCase().includes("khoan")) return "handyman";
+    if (category?.toLowerCase().includes("cnc")) return "precision_manufacturing";
+    if (category?.toLowerCase().includes("cờ lê") || category?.toLowerCase().includes("bộ")) return "build";
+    if (category?.toLowerCase().includes("hàn")) return "flash_on";
+    if (category?.toLowerCase().includes("thước")) return "square_foot";
+    return "handyman";
+  };
 
   return (
-    <div className="tools-in-use">
-      <Card>
-        <Title level={2} style={{ marginBottom: 24 }}>
-          Dụng cụ đang sử dụng
-        </Title>
+    <div className="tools-in-use-page">
+      <div className="tools-in-use-content">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Dụng cụ đang sử dụng</h1>
+            <p className="page-subtitle">Danh sách dụng cụ đang được sử dụng bởi người dùng</p>
+          </div>
+        </div>
 
-        <Table
-          columns={columns}
-          dataSource={tools}
-          rowKey="_id"
-          loading={loading}
-          pagination={{
-            showSizeChanger: true,
-            showTotal: (total) => `Tổng ${total} dụng cụ`,
-          }}
-          scroll={{ x: 1000 }}
-        />
-      </Card>
+        <div className="table-card">
+          <div className="table-wrapper">
+            <table className="tools-table">
+              <thead>
+                <tr>
+                  <th>Tên dụng cụ</th>
+                  <th>Mã số</th>
+                  <th>Loại dụng cụ</th>
+                  <th>Người sử dụng</th>
+                  <th>Số lần sử dụng</th>
+                  <th>Lần sử dụng cuối</th>
+                  <th className="text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" className="text-center loading-cell">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : tools.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="text-center empty-cell">
+                      Không có dụng cụ nào đang sử dụng
+                    </td>
+                  </tr>
+                ) : (
+                  tools.map((tool) => (
+                    <tr key={tool._id} className="table-row">
+                      <td>
+                        <div className="tool-info-cell">
+                          <div className="tool-icon-wrapper">
+                            <span className="material-symbols-outlined">
+                              {getToolIcon(tool.category)}
+                            </span>
+                          </div>
+                          <div>
+                            <Link to={`/tools/${tool._id}`} className="tool-name">
+                              {tool.category || tool.name || "N/A"}
+                            </Link>
+                            <p className="tool-model">
+                              {tool.characteristics?.model
+                                ? `Model: ${tool.characteristics.model}`
+                                : tool.name || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="tool-code">{tool.productCode || "N/A"}</td>
+                      <td>{tool.category || "N/A"}</td>
+                      <td>
+                        {tool.currentUser?.fullName ||
+                          tool.currentUser?.username ||
+                          "N/A"}
+                      </td>
+                      <td>{tool.usageCount || 0}</td>
+                      <td>
+                        {tool.lastUsedDate
+                          ? new Date(tool.lastUsedDate).toLocaleString("vi-VN")
+                          : "N/A"}
+                      </td>
+                      <td className="text-right">
+                        {isMyTool(tool) && (
+                          <button
+                            className="btn-return"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Bạn có chắc chắn muốn trả dụng cụ về kho?"
+                                )
+                              ) {
+                                handleReturnTool(tool);
+                              }
+                            }}
+                            disabled={returning[tool._id]}
+                          >
+                            {returning[tool._id] ? "Đang trả..." : "Trả dụng cụ"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

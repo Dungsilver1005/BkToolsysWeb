@@ -1,23 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Card,
-  Table,
-  Input,
-  Select,
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Row,
-  Col,
-  message,
-} from "antd";
-import {
-  PlusOutlined,
-  SearchOutlined,
-  UserAddOutlined,
-} from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import { useToastContext } from "../context/ToastContext";
 import { Modal } from "../components/Modal";
@@ -27,9 +9,6 @@ import { toolService } from "../services/toolService";
 import { toolRequestService } from "../services/toolRequestService";
 import "./ToolsList.css";
 
-const { Title } = Typography;
-const { Option } = Select;
-
 export const ToolsList = () => {
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +17,13 @@ export const ToolsList = () => {
   const [selectedTool, setSelectedTool] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
   const { isAdmin, user } = useAuth();
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
     search: "",
     status: "",
-    isInUse: "",
     location: "",
     category: "",
     page: 1,
@@ -72,7 +51,6 @@ export const ToolsList = () => {
         setPendingRequests(response.data || []);
       }
     } catch (err) {
-      // Silent fail - không ảnh hưởng đến UI chính
       console.error("Error fetching pending requests:", err);
     }
   };
@@ -80,17 +58,33 @@ export const ToolsList = () => {
   const fetchTools = async () => {
     setLoading(true);
     try {
-      // Map filter status từ UI sang backend
       const backendFilters = { ...filters };
-      if (backendFilters.status === "in_use") {
+
+      // Map quick filter chips
+      if (activeFilter === "available") {
+        backendFilters.isInUse = "false";
+        backendFilters.location = "warehouse";
+        delete backendFilters.status;
+      } else if (activeFilter === "in_use") {
         backendFilters.isInUse = "true";
         delete backendFilters.status;
-      } else if (backendFilters.status === "unusable") {
-        backendFilters.status = "unusable";
-      } else if (backendFilters.status === "disposed") {
-        backendFilters.location = "disposed";
+      } else if (activeFilter === "maintenance") {
+        backendFilters.location = "maintenance";
         delete backendFilters.status;
-      } else if (backendFilters.status === "removed") {
+      } else if (activeFilter === "broken") {
+        backendFilters.status = "unusable";
+        delete backendFilters.location;
+      }
+
+      // Map filter status từ UI sang backend
+      if (backendFilters.status === "available") {
+        backendFilters.isInUse = "false";
+        backendFilters.location = "warehouse";
+        delete backendFilters.status;
+      } else if (backendFilters.status === "in_use") {
+        backendFilters.isInUse = "true";
+        delete backendFilters.status;
+      } else if (backendFilters.status === "maintenance") {
         backendFilters.location = "maintenance";
         delete backendFilters.status;
       }
@@ -115,10 +109,16 @@ export const ToolsList = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setActiveFilter("all");
   };
 
-  const handleTableChange = (pagination) => {
-    setFilters((prev) => ({ ...prev, page: pagination.current }));
+  const handleQuickFilter = (filter) => {
+    setActiveFilter(filter);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setFilters((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleCreateTool = async (formData) => {
@@ -163,215 +163,382 @@ export const ToolsList = () => {
     return true;
   };
 
-  const getStatusTag = (record) => {
-    // Đang được sử dụng: isInUse = true
-    if (record.isInUse) {
-      return <Tag color="blue">Đang được sử dụng</Tag>;
-    }
-    // Không sử dụng được: status = unusable
-    if (record.status === "unusable") {
-      return <Tag color="error">Không sử dụng được</Tag>;
-    }
-    // Đã thanh lý: location = disposed
-    if (record.location === "disposed") {
-      return <Tag color="default">Đã thanh lý</Tag>;
-    }
-    // Đã loại bỏ: location = maintenance hoặc status = old
-    if (record.location === "maintenance" || record.status === "old") {
-      return <Tag color="orange">Đã loại bỏ</Tag>;
-    }
-    // Mặc định: Sử dụng được
-    return <Tag color="success">Sử dụng được</Tag>;
+  const getLastMaintenanceDate = (tool) => {
+    if (!tool.history || tool.history.length === 0) return "--";
+    const maintenanceEntries = tool.history.filter(
+      (entry) => entry.action === "maintenance"
+    );
+    if (maintenanceEntries.length === 0) return "--";
+    const lastMaintenance = maintenanceEntries.sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    )[0];
+    return new Date(lastMaintenance.date).toLocaleDateString("vi-VN");
   };
 
-  const columns = [
-    {
-      title: "Mã sản phẩm",
-      dataIndex: "productCode",
-      key: "productCode",
-      width: 150,
-      render: (text, record) => (
-        <Link to={`/tools/${record._id}`} style={{ fontWeight: 600 }}>
-          {text}
-        </Link>
-      ),
-    },
-    {
-      title: "Loại dụng cụ",
-      dataIndex: "category",
-      key: "category",
-      width: 200,
-      render: (text, record) => (
-        <Link to={`/tools/${record._id}`}>{text || "N/A"}</Link>
-      ),
-    },
-    {
-      title: "Trạng thái",
-      key: "status",
-      width: 180,
-      render: (_, record) => getStatusTag(record),
-    },
-    {
-      title: "Vị trí",
-      dataIndex: "location",
-      key: "location",
-      width: 120,
-      render: (location) => {
-        const locationMap = {
-          warehouse: "Kho",
-          in_use: "Đang sử dụng",
-          maintenance: "Bảo trì",
-          disposed: "Đã thanh lý",
-        };
-        return locationMap[location] || location;
-      },
-    },
-    {
-      title: "Thương hiệu",
-      dataIndex: ["characteristics", "brand"],
-      key: "brand",
-      width: 150,
-      render: (text) => text || "N/A",
-    },
-  ];
+  const getStatusBadge = (record) => {
+    if (record.isInUse) {
+      return (
+        <span className="status-badge status-badge-blue">
+          <span className="status-dot status-dot-blue"></span>
+          Đang sử dụng
+        </span>
+      );
+    }
+    if (record.status === "unusable" || record.location === "disposed") {
+      return (
+        <span className="status-badge status-badge-red">
+          <span className="status-dot status-dot-red"></span>
+          Hỏng
+        </span>
+      );
+    }
+    if (record.location === "maintenance") {
+      return (
+        <span className="status-badge status-badge-amber">
+          <span className="status-dot status-dot-amber"></span>
+          Cần bảo trì
+        </span>
+      );
+    }
+    return (
+      <span className="status-badge status-badge-green">
+        <span className="status-dot status-dot-green"></span>
+        Sẵn sàng
+      </span>
+    );
+  };
 
-  // Add action column for non-admin users
-  if (!isAdmin) {
-    columns.push({
-      title: "Thao tác",
-      key: "action",
-      width: 150,
-      fixed: "right",
-      render: (_, record) => {
-        const canRequest = canRequestTool(record);
-        const hasPending = hasPendingRequest(record._id);
+  const getLocationText = (location) => {
+    const locationMap = {
+      warehouse: "Kho",
+      in_use: "Đang sử dụng",
+      maintenance: "Khu bảo trì",
+      disposed: "Đã thanh lý",
+    };
+    return locationMap[location] || location;
+  };
 
-        if (hasPending) {
-          return <Tag color="orange">Đã gửi yêu cầu</Tag>;
-        }
+  const getToolIcon = (category) => {
+    // Map category to icon
+    if (category?.toLowerCase().includes("khoan")) return "handyman";
+    if (category?.toLowerCase().includes("cnc"))
+      return "precision_manufacturing";
+    if (
+      category?.toLowerCase().includes("cờ lê") ||
+      category?.toLowerCase().includes("bộ")
+    )
+      return "build";
+    if (category?.toLowerCase().includes("hàn")) return "flash_on";
+    if (category?.toLowerCase().includes("thước")) return "square_foot";
+    return "handyman";
+  };
 
-        return (
-          <Button
-            type="primary"
-            size="small"
-            icon={<UserAddOutlined />}
-            onClick={() => handleRequestTool(record)}
-            disabled={!canRequest}
-          >
-            Yêu cầu sử dụng
-          </Button>
-        );
-      },
-    });
-  }
+  const startIndex = (pagination.page - 1) * filters.limit + 1;
+  const endIndex = Math.min(pagination.page * filters.limit, pagination.total);
 
   return (
-    <div className="tools-list">
-      <Card>
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Title level={2} style={{ margin: 0 }}>
-              Danh sách dụng cụ
-            </Title>
-            {isAdmin && (
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setShowCreateModal(true)}
-                size="large"
-              >
-                Thêm dụng cụ
-              </Button>
-            )}
+    <div className="tools-list-page">
+      <div className="tools-list-content">
+        {/* Page Heading */}
+        <div className="tools-list-header">
+          <div className="header-info">
+            <h1 className="page-title">Danh sách Dụng cụ</h1>
+            <p className="page-subtitle">
+              Quản lý toàn bộ vòng đời dụng cụ và thiết bị trong kho sản xuất
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              className="btn-add-tool"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <span className="material-symbols-outlined">add</span>
+              <span>Thêm dụng cụ mới</span>
+            </button>
+          )}
+        </div>
+
+        {/* Filters & Search Bar */}
+        <div className="filters-card">
+          <div className="filters-row">
+            {/* Search */}
+            <div className="search-wrapper">
+              <span className="material-symbols-outlined search-icon">
+                search
+              </span>
+              <input
+                className="search-input"
+                type="text"
+                placeholder="Tìm kiếm theo tên hoặc mã số..."
+                value={filters.search || ""}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
+              />
+            </div>
+
+            {/* Dropdown Filters */}
+            <div className="filters-dropdowns">
+              <div className="filter-select-wrapper">
+                <span className="material-symbols-outlined filter-icon">
+                  filter_alt
+                </span>
+                <select
+                  className="filter-select"
+                  value={filters.location || ""}
+                  onChange={(e) =>
+                    handleFilterChange("location", e.target.value)
+                  }
+                >
+                  <option value="">Tất cả vị trí</option>
+                  <option value="warehouse">Kho</option>
+                  <option value="in_use">Đang sử dụng</option>
+                  <option value="maintenance">Phòng bảo trì</option>
+                </select>
+                <span className="material-symbols-outlined dropdown-icon">
+                  expand_more
+                </span>
+              </div>
+
+              <div className="filter-select-wrapper">
+                <span className="material-symbols-outlined filter-icon">
+                  info
+                </span>
+                <select
+                  className="filter-select"
+                  value={filters.status || ""}
+                  onChange={(e) => handleFilterChange("status", e.target.value)}
+                >
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="available">Sẵn sàng</option>
+                  <option value="in_use">Đang sử dụng</option>
+                  <option value="maintenance">Bảo trì/Hỏng</option>
+                </select>
+                <span className="material-symbols-outlined dropdown-icon">
+                  expand_more
+                </span>
+              </div>
+            </div>
           </div>
 
-          <Card size="small">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Input
-                  placeholder="Tìm kiếm theo tên loại dụng cụ..."
-                  prefix={<SearchOutlined />}
-                  value={filters.category}
-                  onChange={(e) => handleFilterChange("category", e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Input
-                  placeholder="Tìm kiếm mã sản phẩm..."
-                  prefix={<SearchOutlined />}
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Select
-                  placeholder="Trạng thái"
-                  value={filters.status || undefined}
-                  onChange={(value) => handleFilterChange("status", value)}
-                  allowClear
-                  style={{ width: "100%" }}
-                >
-                  <Option value="in_use">Đang được sử dụng</Option>
-                  <Option value="unusable">Không sử dụng được</Option>
-                  <Option value="disposed">Đã thanh lý</Option>
-                  <Option value="removed">Đã loại bỏ</Option>
-                </Select>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Select
-                  placeholder="Vị trí"
-                  value={filters.location || undefined}
-                  onChange={(value) => handleFilterChange("location", value)}
-                  allowClear
-                  style={{ width: "100%" }}
-                >
-                  <Option value="warehouse">Kho</Option>
-                  <Option value="in_use">Đang sử dụng</Option>
-                  <Option value="maintenance">Bảo trì</Option>
-                  <Option value="disposed">Đã thanh lý</Option>
-                </Select>
-              </Col>
-            </Row>
-          </Card>
+          {/* Quick Filter Chips */}
+          <div className="quick-filters">
+            <button
+              className={`filter-chip ${
+                activeFilter === "all" ? "active" : ""
+              }`}
+              onClick={() => handleQuickFilter("all")}
+            >
+              Tất cả
+            </button>
+            <button
+              className={`filter-chip ${
+                activeFilter === "available" ? "active" : ""
+              }`}
+              onClick={() => handleQuickFilter("available")}
+            >
+              <span className="chip-dot chip-dot-green"></span>
+              Sẵn sàng
+            </button>
+            <button
+              className={`filter-chip ${
+                activeFilter === "in_use" ? "active" : ""
+              }`}
+              onClick={() => handleQuickFilter("in_use")}
+            >
+              <span className="chip-dot chip-dot-blue"></span>
+              Đang sử dụng
+            </button>
+            <button
+              className={`filter-chip ${
+                activeFilter === "maintenance" ? "active" : ""
+              }`}
+              onClick={() => handleQuickFilter("maintenance")}
+            >
+              <span className="chip-dot chip-dot-amber"></span>
+              Bảo trì
+            </button>
+            <button
+              className={`filter-chip ${
+                activeFilter === "broken" ? "active" : ""
+              }`}
+              onClick={() => handleQuickFilter("broken")}
+            >
+              <span className="chip-dot chip-dot-red"></span>
+              Hỏng
+            </button>
+          </div>
+        </div>
 
-          <Table
-            columns={columns}
-            dataSource={tools}
-            rowKey="_id"
-            loading={loading}
-            pagination={{
-              current: pagination.page,
-              total: pagination.total,
-              pageSize: filters.limit,
-              showSizeChanger: true,
-              showTotal: (total) => `Tổng ${total} dụng cụ`,
-            }}
-            onChange={handleTableChange}
-            scroll={{ x: 1000 }}
+        {/* Data Table */}
+        <div className="table-card">
+          <div className="table-wrapper">
+            <table className="tools-table">
+              <thead>
+                <tr>
+                  <th className="w-1/4">Tên dụng cụ</th>
+                  <th>Mã số</th>
+                  <th>Vị trí</th>
+                  <th>Lần bảo trì cuối</th>
+                  <th>Tình trạng</th>
+                  <th className="text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center loading-cell">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : tools.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center empty-cell">
+                      Không có dụng cụ nào
+                    </td>
+                  </tr>
+                ) : (
+                  tools.map((tool) => (
+                    <tr key={tool._id} className="table-row">
+                      <td>
+                        <div className="tool-info-cell">
+                          <div className="tool-icon-wrapper">
+                            <span className="material-symbols-outlined">
+                              {getToolIcon(tool.category)}
+                            </span>
+                          </div>
+                          <div>
+                            <Link
+                              to={`/tools/${tool._id}`}
+                              className="tool-name"
+                            >
+                              {tool.category || tool.name || "N/A"}
+                            </Link>
+                            <p className="tool-model">
+                              {tool.characteristics?.model
+                                ? `Model: ${tool.characteristics.model}`
+                                : tool.name || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="tool-code">{tool.productCode || "N/A"}</td>
+                      <td>{getLocationText(tool.location)}</td>
+                      <td>{getLastMaintenanceDate(tool)}</td>
+                      <td>{getStatusBadge(tool)}</td>
+                      <td className="text-right">
+                        <div className="action-buttons">
+                          <Link
+                            to={`/tools/${tool._id}`}
+                            className="action-btn"
+                            title="Xem chi tiết"
+                          >
+                            <span className="material-symbols-outlined">
+                              visibility
+                            </span>
+                          </Link>
+                          {isAdmin && (
+                            <>
+                              <button
+                                className="action-btn action-btn-edit"
+                                onClick={() =>
+                                  navigate(`/tools/${tool._id}?edit=true`)
+                                }
+                                title="Chỉnh sửa"
+                              >
+                                <span className="material-symbols-outlined">
+                                  edit
+                                </span>
+                              </button>
+                              <button
+                                className="action-btn action-btn-delete"
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      "Bạn có chắc muốn xóa dụng cụ này?"
+                                    )
+                                  ) {
+                                    toolService
+                                      .deleteTool(tool._id)
+                                      .then(() => {
+                                        showSuccess("Xóa dụng cụ thành công");
+                                        fetchTools();
+                                      });
+                                  }
+                                }}
+                                title="Xóa"
+                              >
+                                <span className="material-symbols-outlined">
+                                  delete
+                                </span>
+                              </button>
+                            </>
+                          )}
+                          {!isAdmin && canRequestTool(tool) && (
+                            <button
+                              className="action-btn action-btn-request"
+                              onClick={() => handleRequestTool(tool)}
+                              title="Yêu cầu sử dụng"
+                            >
+                              <span className="material-symbols-outlined">
+                                add
+                              </span>
+                            </button>
+                          )}
+                          {!isAdmin && hasPendingRequest(tool._id) && (
+                            <span className="pending-badge">
+                              Đã gửi yêu cầu
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="table-pagination">
+            <p className="pagination-info">
+              Hiển thị <span className="font-medium">{startIndex}</span> đến{" "}
+              <span className="font-medium">{endIndex}</span> của{" "}
+              <span className="font-medium">{pagination.total}</span> kết quả
+            </p>
+            <div className="pagination-controls">
+              <button
+                className="pagination-btn"
+                disabled={pagination.page === 1}
+                onClick={() => handlePageChange(pagination.page - 1)}
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button
+                className="pagination-btn"
+                disabled={pagination.page >= pagination.pages}
+                onClick={() => handlePageChange(pagination.page + 1)}
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {isAdmin && (
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Thêm dụng cụ mới"
+          size="large"
+        >
+          <ToolForm
+            onSubmit={handleCreateTool}
+            onCancel={() => setShowCreateModal(false)}
+            loading={submitting}
           />
-        </Space>
-      </Card>
-
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Thêm dụng cụ mới"
-        size="large"
-      >
-        <ToolForm
-          onSubmit={handleCreateTool}
-          onCancel={() => setShowCreateModal(false)}
-          loading={submitting}
-        />
-      </Modal>
+        </Modal>
+      )}
 
       {!isAdmin && (
         <RequestToolModal

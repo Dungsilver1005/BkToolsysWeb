@@ -1,22 +1,7 @@
 import { useState, useEffect } from "react";
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Select,
-  Popconfirm,
-  message,
-} from "antd";
-import { CloseOutlined, EyeOutlined, UndoOutlined } from "@ant-design/icons";
 import { useToastContext } from "../context/ToastContext";
 import { toolRequestService } from "../services/toolRequestService";
 import "./MyToolRequests.css";
-
-const { Title } = Typography;
-const { Option } = Select;
 
 export const MyToolRequests = () => {
   const { showSuccess, showError } = useToastContext();
@@ -77,164 +62,151 @@ export const MyToolRequests = () => {
     }
   };
 
-  const getStatusTag = (status) => {
+  const getStatusBadge = (status) => {
     const statusMap = {
-      pending: { label: "Chờ duyệt", color: "orange" },
-      approved: { label: "Đã duyệt", color: "green" },
-      rejected: { label: "Đã từ chối", color: "red" },
-      cancelled: { label: "Đã hủy", color: "default" },
-      returned: { label: "Đã trả", color: "blue" },
+      pending: { label: "Chờ duyệt", className: "status-badge status-badge-yellow" },
+      approved: { label: "Đã duyệt", className: "status-badge status-badge-green" },
+      rejected: { label: "Đã từ chối", className: "status-badge status-badge-red" },
+      cancelled: { label: "Đã hủy", className: "status-badge status-badge-gray" },
+      returned: { label: "Đã trả", className: "status-badge status-badge-blue" },
     };
-    const statusInfo = statusMap[status] || { label: status, color: "default" };
-    return <Tag color={statusInfo.color}>{statusInfo.label}</Tag>;
+    const statusInfo = statusMap[status] || statusMap.pending;
+    return (
+      <span className={statusInfo.className}>
+        <span className="status-dot"></span>
+        {statusInfo.label}
+      </span>
+    );
   };
 
-  const columns = [
-    {
-      title: "Dụng cụ",
-      key: "tool",
-      width: 250,
-      render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{record.tool?.name || "N/A"}</div>
-          <div style={{ fontSize: 12, color: "#999" }}>
-            Mã: {record.tool?.productCode || "N/A"}
+  return (
+    <div className="my-tool-requests-page">
+      <div className="my-tool-requests-content">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Yêu cầu của tôi</h1>
+            <p className="page-subtitle">Theo dõi trạng thái các yêu cầu sử dụng dụng cụ của bạn</p>
+          </div>
+          <div className="filter-select-wrapper">
+            <span className="material-symbols-outlined filter-icon">filter_alt</span>
+            <select
+              className="filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Đã từ chối</option>
+              <option value="cancelled">Đã hủy</option>
+              <option value="returned">Đã trả</option>
+            </select>
+            <span className="material-symbols-outlined dropdown-icon">expand_more</span>
           </div>
         </div>
-      ),
-    },
-    {
-      title: "Mục đích",
-      dataIndex: "purpose",
-      key: "purpose",
-      ellipsis: true,
-    },
-    {
-      title: "Thời gian dự kiến",
-      dataIndex: "expectedDuration",
-      key: "expectedDuration",
-      width: 150,
-    },
-    {
-      title: "Ngày yêu cầu",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 150,
-      render: (date) => new Date(date).toLocaleString("vi-VN"),
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 120,
-      render: (status) => getStatusTag(status),
-    },
-    {
-      title: "Ngày duyệt",
-      key: "reviewedAt",
-      width: 150,
-      render: (_, record) =>
-        record.reviewedAt
-          ? new Date(record.reviewedAt).toLocaleString("vi-VN")
-          : "N/A",
-    },
-    {
-      title: "Lý do từ chối",
-      dataIndex: "rejectionReason",
-      key: "rejectionReason",
-      ellipsis: true,
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 200,
-      fixed: "right",
-      render: (_, record) => {
-        if (record.status === "pending") {
-          return (
-            <Popconfirm
-              title="Hủy yêu cầu này?"
-              description="Bạn có chắc chắn muốn hủy yêu cầu?"
-              onConfirm={() => handleCancel(record._id)}
-              okText="Hủy"
-              cancelText="Không"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="link" danger size="small" icon={<CloseOutlined />}>
-                Hủy yêu cầu
-              </Button>
-            </Popconfirm>
-          );
-        }
-        if (record.status === "approved" && record.tool?.isInUse) {
-          return (
-            <Popconfirm
-              title="Trả dụng cụ này?"
-              description="Bạn có chắc chắn muốn trả dụng cụ về kho?"
-              onConfirm={() => handleReturn(record._id)}
-              okText="Trả"
-              cancelText="Hủy"
-              okButtonProps={{ loading: returning[record._id] }}
-            >
-              <Button
-                type="primary"
-                size="small"
-                icon={<UndoOutlined />}
-                loading={returning[record._id]}
-              >
-                Trả dụng cụ
-              </Button>
-            </Popconfirm>
-          );
-        }
-        return null;
-      },
-    },
-  ];
 
-  return (
-    <div className="my-tool-requests">
-      <Card>
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Title level={2} style={{ margin: 0 }}>
-              Yêu cầu của tôi
-            </Title>
-            <Select
-              placeholder="Lọc theo trạng thái"
-              value={statusFilter || undefined}
-              onChange={(value) => setStatusFilter(value)}
-              allowClear
-              style={{ width: 200 }}
-            >
-              <Option value="pending">Chờ duyệt</Option>
-              <Option value="approved">Đã duyệt</Option>
-              <Option value="rejected">Đã từ chối</Option>
-              <Option value="cancelled">Đã hủy</Option>
-              <Option value="returned">Đã trả</Option>
-            </Select>
+        <div className="table-card">
+          <div className="table-wrapper">
+            <table className="requests-table">
+              <thead>
+                <tr>
+                  <th>Dụng cụ</th>
+                  <th>Mục đích</th>
+                  <th>Thời gian dự kiến</th>
+                  <th>Ngày yêu cầu</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày duyệt</th>
+                  <th>Lý do từ chối</th>
+                  <th className="text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="text-center loading-cell">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : requests.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="text-center empty-cell">
+                      Không có yêu cầu nào
+                    </td>
+                  </tr>
+                ) : (
+                  requests.map((request) => (
+                    <tr key={request._id} className="table-row">
+                      <td>
+                        <div>
+                          <div className="tool-name-cell">
+                            {request.tool?.category || request.tool?.name || "N/A"}
+                          </div>
+                          <div className="tool-code-cell">
+                            Mã: {request.tool?.productCode || "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-muted">{request.purpose || "N/A"}</td>
+                      <td>{request.expectedDuration || "N/A"}</td>
+                      <td>
+                        {request.createdAt
+                          ? new Date(request.createdAt).toLocaleString("vi-VN")
+                          : "N/A"}
+                      </td>
+                      <td>{getStatusBadge(request.status)}</td>
+                      <td>
+                        {request.reviewedAt
+                          ? new Date(request.reviewedAt).toLocaleString("vi-VN")
+                          : "N/A"}
+                      </td>
+                      <td className="text-muted">
+                        {request.rejectionReason || "N/A"}
+                      </td>
+                      <td className="text-right">
+                        {request.status === "pending" && (
+                          <button
+                            className="action-btn action-btn-cancel"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Bạn có chắc chắn muốn hủy yêu cầu này?"
+                                )
+                              ) {
+                                handleCancel(request._id);
+                              }
+                            }}
+                          >
+                            <span className="material-symbols-outlined">close</span>
+                            Hủy yêu cầu
+                          </button>
+                        )}
+                        {request.status === "approved" && request.tool?.isInUse && (
+                          <button
+                            className="action-btn action-btn-return"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Bạn có chắc chắn muốn trả dụng cụ về kho?"
+                                )
+                              ) {
+                                handleReturn(request._id);
+                              }
+                            }}
+                            disabled={returning[request._id]}
+                          >
+                            <span className="material-symbols-outlined">undo</span>
+                            {returning[request._id] ? "Đang trả..." : "Trả dụng cụ"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-
-          <Table
-            columns={columns}
-            dataSource={requests}
-            rowKey="_id"
-            loading={loading}
-            pagination={{
-              showSizeChanger: true,
-              showTotal: (total) => `Tổng ${total} yêu cầu`,
-            }}
-            scroll={{ x: 1000 }}
-          />
-        </Space>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
