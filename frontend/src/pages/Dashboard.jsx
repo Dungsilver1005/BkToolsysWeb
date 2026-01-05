@@ -40,18 +40,18 @@ export const Dashboard = () => {
 
       if (statsResponse.success) {
         const data = statsResponse.data;
-        const maintenanceCount = data.toolsByLocation?.find(
-          (item) => item._id === "maintenance"
-        )?.count || 0;
-        const unusableCount = data.toolsByStatus?.find(
-          (item) => item._id === "unusable"
-        )?.count || 0;
+        const maintenanceCount =
+          data.toolsByLocation?.find((item) => item._id === "maintenance")
+            ?.count || 0;
+        const unusableCount =
+          data.toolsByStatus?.find((item) => item._id === "unusable")?.count ||
+          0;
         const availableCount = (data.totalTools || 0) - (data.toolsInUse || 0);
         const lowStockCount = availableCount < 10 ? availableCount : 0;
 
         currentStats = {
-            totalTools: data.totalTools || 0,
-            toolsInUse: data.toolsInUse || 0,
+          totalTools: data.totalTools || 0,
+          toolsInUse: data.toolsInUse || 0,
           maintenance: maintenanceCount,
           lowStock: lowStockCount,
           toolsByLocation: data.toolsByLocation || [],
@@ -62,7 +62,9 @@ export const Dashboard = () => {
       }
 
       // Fetch recent activities (tool requests)
-      const activitiesResponse = await toolRequestService.getRequests({ limit: 10 });
+      const activitiesResponse = await toolRequestService.getRequests({
+        limit: 10,
+      });
       if (activitiesResponse.success) {
         setRecentActivities(activitiesResponse.data?.slice(0, 10) || []);
       }
@@ -80,7 +82,7 @@ export const Dashboard = () => {
     try {
       const alertsList = [];
       const statsData = currentStatsData || stats;
-      
+
       // Get overdue tools
       const toolsInUseResponse = await toolService.getToolsInUse();
       if (toolsInUseResponse.success) {
@@ -94,7 +96,11 @@ export const Dashboard = () => {
               alertsList.push({
                 type: "error",
                 title: `${tool.productCode || tool.name} quá hạn trả`,
-                message: `Người mượn: ${tool.currentUser?.fullName || tool.currentUser?.username || "N/A"}. Quá hạn ${daysSince - 7} ngày.`,
+                message: `Người mượn: ${
+                  tool.currentUser?.fullName ||
+                  tool.currentUser?.username ||
+                  "N/A"
+                }. Quá hạn ${daysSince - 7} ngày.`,
                 tool: tool,
               });
             }
@@ -129,10 +135,17 @@ export const Dashboard = () => {
 
   const getStatusDistribution = () => {
     const total = stats.totalTools || 1;
-    const available = total - stats.toolsInUse - (stats.toolsByLocation?.find(l => l._id === "maintenance")?.count || 0) - (stats.toolsByStatus?.find(s => s._id === "unusable")?.count || 0);
+    const available =
+      total -
+      stats.toolsInUse -
+      (stats.toolsByLocation?.find((l) => l._id === "maintenance")?.count ||
+        0) -
+      (stats.toolsByStatus?.find((s) => s._id === "unusable")?.count || 0);
     const inUse = stats.toolsInUse;
-    const maintenance = stats.toolsByLocation?.find(l => l._id === "maintenance")?.count || 0;
-    const unusable = stats.toolsByStatus?.find(s => s._id === "unusable")?.count || 0;
+    const maintenance =
+      stats.toolsByLocation?.find((l) => l._id === "maintenance")?.count || 0;
+    const unusable =
+      stats.toolsByStatus?.find((s) => s._id === "unusable")?.count || 0;
 
     return {
       available: Math.round((available / total) * 100),
@@ -160,8 +173,14 @@ export const Dashboard = () => {
     const statusMap = {
       approved: { label: "Mượn", className: "status-badge status-badge-blue" },
       returned: { label: "Trả", className: "status-badge status-badge-green" },
-      rejected: { label: "Báo lỗi", className: "status-badge status-badge-red" },
-      pending: { label: "Chờ duyệt", className: "status-badge status-badge-yellow" },
+      rejected: {
+        label: "Báo lỗi",
+        className: "status-badge status-badge-red",
+      },
+      pending: {
+        label: "Chờ duyệt",
+        className: "status-badge status-badge-yellow",
+      },
     };
     const statusInfo = statusMap[status] || statusMap.pending;
     return (
@@ -180,15 +199,19 @@ export const Dashboard = () => {
       <div className="dashboard-content">
         {/* Page Heading */}
         <div className="dashboard-header">
-        <div>
+          <div>
             <h1 className="dashboard-title">Bảng điều khiển</h1>
-            <p className="dashboard-subtitle">Cập nhật trạng thái hệ thống ngày {currentDate}</p>
-        </div>
+            <p className="dashboard-subtitle">
+              Cập nhật trạng thái hệ thống ngày {currentDate}
+            </p>
+          </div>
           <div className="dashboard-actions">
             {isAdmin && (
               <>
                 <button className="dashboard-btn-secondary">
-                  <span className="material-symbols-outlined">file_download</span>
+                  <span className="material-symbols-outlined">
+                    file_download
+                  </span>
                   Xuất báo cáo
                 </button>
                 <button
@@ -209,7 +232,9 @@ export const Dashboard = () => {
             <div className="stat-header">
               <div>
                 <p className="stat-label">Tổng số dụng cụ</p>
-                <h3 className="stat-value">{loading ? "..." : stats.totalTools.toLocaleString()}</h3>
+                <h3 className="stat-value">
+                  {loading ? "..." : stats.totalTools.toLocaleString()}
+                </h3>
               </div>
               <div className="stat-icon stat-icon-blue">
                 <span className="material-symbols-outlined">inventory</span>
@@ -228,7 +253,9 @@ export const Dashboard = () => {
             <div className="stat-header">
               <div>
                 <p className="stat-label">Đang sử dụng</p>
-                <h3 className="stat-value">{loading ? "..." : stats.toolsInUse.toLocaleString()}</h3>
+                <h3 className="stat-value">
+                  {loading ? "..." : stats.toolsInUse.toLocaleString()}
+                </h3>
               </div>
               <div className="stat-icon stat-icon-indigo">
                 <span className="material-symbols-outlined">engineering</span>
@@ -247,7 +274,9 @@ export const Dashboard = () => {
             <div className="stat-header">
               <div>
                 <p className="stat-label">Cần bảo trì</p>
-                <h3 className="stat-value">{loading ? "..." : stats.maintenance.toLocaleString()}</h3>
+                <h3 className="stat-value">
+                  {loading ? "..." : stats.maintenance.toLocaleString()}
+                </h3>
               </div>
               <div className="stat-icon stat-icon-red">
                 <span className="material-symbols-outlined">build_circle</span>
@@ -256,7 +285,9 @@ export const Dashboard = () => {
             <div className="stat-footer">
               <span className="stat-trend stat-trend-down">
                 <span className="material-symbols-outlined">priority_high</span>
-                {stats.maintenance > 0 ? `${stats.maintenance} cần xử lý` : "0 quá hạn"}
+                {stats.maintenance > 0
+                  ? `${stats.maintenance} cần xử lý`
+                  : "0 quá hạn"}
               </span>
               <span className="stat-note">cần xử lý ngay</span>
             </div>
@@ -265,8 +296,10 @@ export const Dashboard = () => {
           <div className="dashboard-stat-card">
             <div className="stat-header">
               <div>
-                <p className="stat-label">Tồn kho thấp</p>
-                <h3 className="stat-value">{loading ? "..." : stats.lowStock.toLocaleString()}</h3>
+                <p className="stat-label">Tồn kho</p>
+                <h3 className="stat-value">
+                  {loading ? "..." : stats.lowStock.toLocaleString()}
+                </h3>
               </div>
               <div className="stat-icon stat-icon-orange">
                 <span className="material-symbols-outlined">warning</span>
@@ -274,7 +307,9 @@ export const Dashboard = () => {
             </div>
             <div className="stat-footer">
               <span className="stat-trend stat-trend-down">
-                <span className="material-symbols-outlined">arrow_downward</span>
+                <span className="material-symbols-outlined">
+                  arrow_downward
+                </span>
                 {stats.lowStock > 0 ? `${stats.lowStock} mục` : "Đủ"}
               </span>
               <span className="stat-note">cần nhập thêm</span>
@@ -291,7 +326,9 @@ export const Dashboard = () => {
               <div className="card-header">
                 <div>
                   <h2 className="card-title">Xu hướng sử dụng</h2>
-                  <p className="card-subtitle">Số lượng mượn/trả trong 7 ngày qua</p>
+                  <p className="card-subtitle">
+                    Số lượng mượn/trả trong 7 ngày qua
+                  </p>
                 </div>
                 <select className="card-select">
                   <option>7 ngày qua</option>
@@ -300,9 +337,19 @@ export const Dashboard = () => {
                 </select>
               </div>
               <div className="chart-container">
-                <svg className="chart-svg" preserveAspectRatio="none" viewBox="0 0 478 150">
+                <svg
+                  className="chart-svg"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 478 150"
+                >
                   <defs>
-                    <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                    <linearGradient
+                      id="chartGradient"
+                      x1="0"
+                      x2="0"
+                      y1="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#135bec" stopOpacity="0.2" />
                       <stop offset="100%" stopColor="#135bec" stopOpacity="0" />
                     </linearGradient>
@@ -340,7 +387,9 @@ export const Dashboard = () => {
               </div>
               <div className="distribution-grid">
                 <div className="distribution-item">
-                  <span className="distribution-percent">{distribution.available}%</span>
+                  <span className="distribution-percent">
+                    {distribution.available}%
+                  </span>
                   <div className="distribution-bar">
                     <div
                       className="distribution-fill distribution-fill-green"
@@ -350,7 +399,9 @@ export const Dashboard = () => {
                   <span className="distribution-label">Sẵn sàng</span>
                 </div>
                 <div className="distribution-item">
-                  <span className="distribution-percent">{distribution.inUse}%</span>
+                  <span className="distribution-percent">
+                    {distribution.inUse}%
+                  </span>
                   <div className="distribution-bar">
                     <div
                       className="distribution-fill distribution-fill-blue"
@@ -360,7 +411,9 @@ export const Dashboard = () => {
                   <span className="distribution-label">Đang dùng</span>
                 </div>
                 <div className="distribution-item">
-                  <span className="distribution-percent">{distribution.maintenance}%</span>
+                  <span className="distribution-percent">
+                    {distribution.maintenance}%
+                  </span>
                   <div className="distribution-bar">
                     <div
                       className="distribution-fill distribution-fill-orange"
@@ -370,7 +423,9 @@ export const Dashboard = () => {
                   <span className="distribution-label">Bảo trì</span>
                 </div>
                 <div className="distribution-item">
-                  <span className="distribution-percent">{distribution.unusable}%</span>
+                  <span className="distribution-percent">
+                    {distribution.unusable}%
+                  </span>
                   <div className="distribution-bar">
                     <div
                       className="distribution-fill distribution-fill-red"
@@ -388,7 +443,9 @@ export const Dashboard = () => {
             <div className="dashboard-card alerts-card">
               <div className="alerts-header">
                 <h2 className="card-title">
-                  <span className="material-symbols-outlined alerts-icon">warning</span>
+                  <span className="material-symbols-outlined alerts-icon">
+                    warning
+                  </span>
                   Thông báo quan trọng
                 </h2>
                 {alerts.length > 0 && (
@@ -412,7 +469,9 @@ export const Dashboard = () => {
                 ) : (
                   <div className="alert-item">
                     <div className="alert-content">
-                      <p className="alert-message">Không có thông báo quan trọng</p>
+                      <p className="alert-message">
+                        Không có thông báo quan trọng
+                      </p>
                     </div>
                   </div>
                 )}
@@ -430,7 +489,9 @@ export const Dashboard = () => {
             <h2 className="card-title">Hoạt động gần đây</h2>
             <div className="card-actions">
               <div className="filter-wrapper">
-                <span className="material-symbols-outlined filter-icon">filter_list</span>
+                <span className="material-symbols-outlined filter-icon">
+                  filter_list
+                </span>
                 <select className="card-select">
                   <option>Tất cả trạng thái</option>
                   <option>Mượn</option>
@@ -454,7 +515,9 @@ export const Dashboard = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="text-center">Đang tải...</td>
+                    <td colSpan="5" className="text-center">
+                      Đang tải...
+                    </td>
                   </tr>
                 ) : recentActivities.length > 0 ? (
                   recentActivities.map((activity) => (
@@ -462,14 +525,21 @@ export const Dashboard = () => {
                       <td>
                         <div className="tool-info">
                           <div className="tool-icon">
-                            <span className="material-symbols-outlined">handyman</span>
+                            <span className="material-symbols-outlined">
+                              handyman
+                            </span>
                           </div>
                           <div>
                             <p className="tool-name">
-                              {activity.tool?.name || activity.tool?.productCode || "N/A"}
+                              {activity.tool?.name ||
+                                activity.tool?.productCode ||
+                                "N/A"}
                             </p>
                             <p className="tool-id">
-                              ID: {activity.tool?.productCode || activity.tool?._id || "N/A"}
+                              ID:{" "}
+                              {activity.tool?.productCode ||
+                                activity.tool?._id ||
+                                "N/A"}
                             </p>
                           </div>
                         </div>
@@ -490,14 +560,18 @@ export const Dashboard = () => {
                       </td>
                       <td className="text-right">
                         <button className="action-btn">
-                          <span className="material-symbols-outlined">more_vert</span>
+                          <span className="material-symbols-outlined">
+                            more_vert
+                          </span>
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center">Không có hoạt động gần đây</td>
+                    <td colSpan="5" className="text-center">
+                      Không có hoạt động gần đây
+                    </td>
                   </tr>
                 )}
               </tbody>
