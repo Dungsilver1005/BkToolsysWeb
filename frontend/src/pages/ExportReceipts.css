@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
 .export-receipts-page {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background: #f6f6f8;
   min-height: 100vh;
   padding: 1rem;
@@ -251,6 +251,15 @@
   background: rgba(19, 91, 236, 0.1);
 }
 
+.action-btn-delete {
+  color: #ef4444;
+}
+
+.action-btn-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 .action-btn .material-symbols-outlined {
   font-size: 1.25rem;
 }
@@ -397,4 +406,22 @@
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-danger {
+  background: #ef4444;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.delete-modal-content {
+  padding: 1rem 0;
+}
+
+.delete-modal-content p {
+  margin-bottom: 1.5rem;
+  color: #334155;
+  line-height: 1.6;
 }

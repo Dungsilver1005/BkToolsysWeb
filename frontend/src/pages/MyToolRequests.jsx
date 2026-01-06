@@ -46,7 +46,7 @@ export const MyToolRequests = () => {
   };
 
   const handleReturn = async (requestId) => {
-    setReturning({ ...returning, [requestId]: true });
+    setReturning((prev) => ({ ...prev, [requestId]: true }));
     try {
       const response = await toolRequestService.returnTool(requestId);
       if (response.success) {
@@ -58,7 +58,7 @@ export const MyToolRequests = () => {
     } catch (err) {
       showError(err.response?.data?.message || "Có lỗi xảy ra khi trả dụng cụ");
     } finally {
-      setReturning({ ...returning, [requestId]: false });
+      setReturning((prev) => ({ ...prev, [requestId]: false }));
     }
   };
 
@@ -139,11 +139,19 @@ export const MyToolRequests = () => {
                       <td>
                         <div>
                           <div className="tool-name-cell">
-                            {request.tool?.category || request.tool?.name || "N/A"}
+                            {request.toolName ||
+                              request.tool?.category ||
+                              request.tool?.name ||
+                              "N/A"}
                           </div>
                           <div className="tool-code-cell">
-                            Mã: {request.tool?.productCode || "N/A"}
+                            Mã: {request.toolCode || request.tool?.productCode || "N/A"}
                           </div>
+                          {request.quantity && (
+                            <div className="tool-quantity-cell">
+                              Số lượng: {request.quantity}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="text-muted">{request.purpose || "N/A"}</td>
@@ -180,7 +188,7 @@ export const MyToolRequests = () => {
                             Hủy yêu cầu
                           </button>
                         )}
-                        {request.status === "approved" && request.tool?.isInUse && (
+                        {request.status === "approved" && (
                           <button
                             className="action-btn action-btn-return"
                             onClick={() => {

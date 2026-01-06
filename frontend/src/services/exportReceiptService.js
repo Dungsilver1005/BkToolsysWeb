@@ -32,4 +32,14 @@ export const exportReceiptService = {
     const response = await api.post("/export-receipts", receiptData);
     return response.data;
   },
+
+  /**
+   * Xóa export receipt
+   * @param {string} id - Receipt ID
+   * @returns {Promise}
+   */
+  deleteExportReceipt: async (id) => {
+    const response = await api.delete(`/export-receipts/${id}`);
+    return response.data;
+  },
 };

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toolService } from "../services/toolService";
 import { toolRequestService } from "../services/toolRequestService";
+import { Modal } from "../components/Modal";
 import "./Dashboard.css";
 
 export const Dashboard = () => {
@@ -19,6 +20,9 @@ export const Dashboard = () => {
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -191,6 +195,101 @@ export const Dashboard = () => {
     );
   };
 
+  const handleExportReport = async () => {
+    setShowReportModal(true);
+    setLoadingReport(true);
+    try {
+      // Lấy thống kê
+      const statsResponse = await toolService.getStatistics();
+
+      // Lấy dụng cụ sử dụng trong tháng
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const toolsInUseResponse = await toolService.getToolsInUse();
+      const toolsUsedThisMonth = toolsInUseResponse.success
+        ? (toolsInUseResponse.data || []).filter(
+            (tool) =>
+              tool.lastUsedDate && new Date(tool.lastUsedDate) >= startOfMonth
+          ).length
+        : 0;
+
+      // Lấy dụng cụ không được sử dụng
+      const unusedToolsResponse = await toolService.getTools({
+        isInUse: "false",
+        location: "warehouse",
+        limit: 1000,
+      });
+      const unusedTools = unusedToolsResponse.success
+        ? unusedToolsResponse.data || []
+        : [];
+
+      // Lấy dụng cụ cần bảo trì
+      const maintenanceToolsResponse = await toolService.getTools({
+        location: "maintenance",
+        limit: 1000,
+      });
+      const maintenanceTools = maintenanceToolsResponse.success
+        ? maintenanceToolsResponse.data || []
+        : [];
+
+      // Lấy dụng cụ cần thanh lý (location = disposed hoặc status = old)
+      const disposalToolsResponse1 = await toolService.getTools({
+        location: "disposed",
+        limit: 1000,
+      });
+      const disposalToolsResponse2 = await toolService.getTools({
+        status: "old",
+        limit: 1000,
+      });
+      const disposalTools1 = disposalToolsResponse1.success
+        ? disposalToolsResponse1.data || []
+        : [];
+      const disposalTools2 = disposalToolsResponse2.success
+        ? disposalToolsResponse2.data || []
+        : [];
+      // Kết hợp và loại bỏ trùng lặp
+      const disposalToolsMap = new Map();
+      [...disposalTools1, ...disposalTools2].forEach((tool) => {
+        disposalToolsMap.set(tool._id, tool);
+      });
+      const disposalTools = Array.from(disposalToolsMap.values());
+
+      // Lấy dụng cụ hỏng
+      const brokenToolsResponse = await toolService.getTools({
+        status: "unusable",
+        limit: 1000,
+      });
+      const brokenTools = brokenToolsResponse.success
+        ? brokenToolsResponse.data || []
+        : [];
+
+      if (statsResponse.success) {
+        const data = statsResponse.data;
+        setReportData({
+          toolsUsedThisMonth,
+          unusedTools: unusedTools.length,
+          maintenanceTools: maintenanceTools.length,
+          disposalTools: disposalTools.length,
+          brokenTools: brokenTools.length,
+          unusedToolsList: unusedTools,
+          maintenanceToolsList: maintenanceTools,
+          disposalToolsList: disposalTools,
+          brokenToolsList: brokenTools,
+          totalTools: data.totalTools || 0,
+          toolsInUse: data.toolsInUse || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error generating report:", error);
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
   const distribution = getStatusDistribution();
   const currentDate = new Date().toLocaleDateString("vi-VN");
 
@@ -208,7 +307,10 @@ export const Dashboard = () => {
           <div className="dashboard-actions">
             {isAdmin && (
               <>
-                <button className="dashboard-btn-secondary">
+                <button
+                  className="dashboard-btn-secondary"
+                  onClick={handleExportReport}
+                >
                   <span className="material-symbols-outlined">
                     file_download
                   </span>
@@ -579,6 +681,213 @@ export const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {isAdmin && (
+        <Modal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setReportData(null);
+          }}
+          title="Báo cáo dụng cụ"
+          size="large"
+        >
+          <div className="report-content">
+            {loadingReport ? (
+              <div className="report-loading">Đang tải dữ liệu...</div>
+            ) : reportData ? (
+              <>
+                <div className="report-header">
+                  <h2>BÁO CÁO DỤNG CỤ</h2>
+                  <p>Ngày xuất: {new Date().toLocaleString("vi-VN")}</p>
+                </div>
+
+                <div className="report-summary">
+                  <div className="report-summary-item">
+                    <h3>Tổng số dụng cụ sử dụng trong tháng</h3>
+                    <p className="report-value">
+                      {reportData.toolsUsedThisMonth}
+                    </p>
+                  </div>
+                  <div className="report-summary-item">
+                    <h3>Dụng cụ không được sử dụng</h3>
+                    <p className="report-value">{reportData.unusedTools}</p>
+                  </div>
+                  <div className="report-summary-item">
+                    <h3>Dụng cụ cần bảo trì</h3>
+                    <p className="report-value">
+                      {reportData.maintenanceTools}
+                    </p>
+                  </div>
+                  <div className="report-summary-item">
+                    <h3>Dụng cụ cần thanh lý</h3>
+                    <p className="report-value">{reportData.disposalTools}</p>
+                  </div>
+                  <div className="report-summary-item">
+                    <h3>Dụng cụ hỏng</h3>
+                    <p className="report-value">{reportData.brokenTools}</p>
+                  </div>
+                </div>
+
+                {reportData.unusedToolsList.length > 0 && (
+                  <div className="report-section">
+                    <h3>Chi tiết dụng cụ không được sử dụng</h3>
+                    <div className="report-table-wrapper">
+                      <table className="report-table">
+                        <thead>
+                          <tr>
+                            <th>Mã dụng cụ</th>
+                            <th>Tên dụng cụ</th>
+                            <th>Vị trí</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.unusedToolsList
+                            .slice(0, 10)
+                            .map((tool) => (
+                              <tr key={tool._id}>
+                                <td>{tool.productCode || "N/A"}</td>
+                                <td>{tool.category || tool.name || "N/A"}</td>
+                                <td>Kho</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {reportData.unusedToolsList.length > 10 && (
+                        <p className="report-note">
+                          ... và {reportData.unusedToolsList.length - 10} dụng
+                          cụ khác
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {reportData.maintenanceToolsList.length > 0 && (
+                  <div className="report-section">
+                    <h3>Chi tiết dụng cụ cần bảo trì</h3>
+                    <div className="report-table-wrapper">
+                      <table className="report-table">
+                        <thead>
+                          <tr>
+                            <th>Mã dụng cụ</th>
+                            <th>Tên dụng cụ</th>
+                            <th>Vị trí</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.maintenanceToolsList
+                            .slice(0, 10)
+                            .map((tool) => (
+                              <tr key={tool._id}>
+                                <td>{tool.productCode || "N/A"}</td>
+                                <td>{tool.category || tool.name || "N/A"}</td>
+                                <td>Bảo trì</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {reportData.maintenanceToolsList.length > 10 && (
+                        <p className="report-note">
+                          ... và {reportData.maintenanceToolsList.length - 10}{" "}
+                          dụng cụ khác
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {reportData.disposalToolsList.length > 0 && (
+                  <div className="report-section">
+                    <h3>Chi tiết dụng cụ cần thanh lý</h3>
+                    <div className="report-table-wrapper">
+                      <table className="report-table">
+                        <thead>
+                          <tr>
+                            <th>Mã dụng cụ</th>
+                            <th>Tên dụng cụ</th>
+                            <th>Vị trí</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.disposalToolsList
+                            .slice(0, 10)
+                            .map((tool) => (
+                              <tr key={tool._id}>
+                                <td>{tool.productCode || "N/A"}</td>
+                                <td>{tool.category || tool.name || "N/A"}</td>
+                                <td>Đã thanh lý</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {reportData.disposalToolsList.length > 10 && (
+                        <p className="report-note">
+                          ... và {reportData.disposalToolsList.length - 10} dụng
+                          cụ khác
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {reportData.brokenToolsList.length > 0 && (
+                  <div className="report-section">
+                    <h3>Chi tiết dụng cụ hỏng</h3>
+                    <div className="report-table-wrapper">
+                      <table className="report-table">
+                        <thead>
+                          <tr>
+                            <th>Mã dụng cụ</th>
+                            <th>Tên dụng cụ</th>
+                            <th>Trạng thái</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.brokenToolsList
+                            .slice(0, 10)
+                            .map((tool) => (
+                              <tr key={tool._id}>
+                                <td>{tool.productCode || "N/A"}</td>
+                                <td>{tool.category || tool.name || "N/A"}</td>
+                                <td>Hỏng</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {reportData.brokenToolsList.length > 10 && (
+                        <p className="report-note">
+                          ... và {reportData.brokenToolsList.length - 10} dụng
+                          cụ khác
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="report-actions">
+                  <button
+                    className="btn-cancel"
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setReportData(null);
+                    }}
+                  >
+                    Đóng
+                  </button>
+                  <button className="btn-submit" onClick={handlePrintReport}>
+                    <span className="material-symbols-outlined">print</span>
+                    In báo cáo
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="report-loading">Không có dữ liệu</div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

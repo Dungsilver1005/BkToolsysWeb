@@ -4,7 +4,23 @@ const toolRequestSchema = new mongoose.Schema({
   tool: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Tool",
-    required: [true, "Vui lòng chọn dụng cụ"],
+    default: null,
+  },
+  toolName: {
+    type: String,
+    required: [true, "Vui lòng nhập tên dụng cụ"],
+    trim: true,
+  },
+  toolCode: {
+    type: String,
+    required: [true, "Vui lòng nhập mã dụng cụ"],
+    trim: true,
+    uppercase: true,
+  },
+  quantity: {
+    type: Number,
+    required: [true, "Vui lòng nhập số lượng"],
+    min: [1, "Số lượng phải lớn hơn 0"],
   },
   requestedBy: {
     type: mongoose.Schema.Types.ObjectId,

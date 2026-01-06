@@ -246,6 +246,76 @@
   opacity: 1;
 }
 
+.action-btn-delete {
+  color: #ef4444;
+}
+
+.action-btn-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.delete-modal-content {
+  padding: 1rem 0;
+}
+
+.delete-modal-content p {
+  margin-bottom: 1.5rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel,
+.btn-submit {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.btn-submit {
+  background: #1890ff;
+  color: white;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #40a9ff;
+}
+
+.btn-submit:disabled,
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
 .action-btn {
   padding: 0.375rem;
   border-radius: 0.375rem;

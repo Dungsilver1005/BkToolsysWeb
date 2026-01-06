@@ -11,7 +11,10 @@ export const ExportReceipts = () => {
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [availableTools, setAvailableTools] = useState([]);
   const [formData, setFormData] = useState({
     purpose: "",
@@ -120,6 +123,35 @@ export const ExportReceipts = () => {
     setFormData({ ...formData, tools: newTools });
   };
 
+  const handleDeleteReceipt = (receipt) => {
+    setSelectedReceipt(receipt);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteReceipt = async () => {
+    if (!selectedReceipt) return;
+    setDeleting(true);
+    try {
+      const response = await exportReceiptService.deleteExportReceipt(
+        selectedReceipt._id
+      );
+      if (response.success) {
+        showSuccess("Xóa phiếu xuất kho thành công");
+        setShowDeleteModal(false);
+        setSelectedReceipt(null);
+        fetchReceipts();
+      } else {
+        showError(response.message || "Xóa phiếu xuất kho thất bại");
+      }
+    } catch (err) {
+      showError(
+        err.response?.data?.message || "Có lỗi xảy ra khi xóa phiếu xuất kho"
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: { label: "Chờ xử lý", className: "status-badge status-badge-yellow" },
@@ -207,6 +239,13 @@ export const ExportReceipts = () => {
                           >
                             <span className="material-symbols-outlined">visibility</span>
                           </Link>
+                          <button
+                            className="action-btn action-btn-delete"
+                            onClick={() => handleDeleteReceipt(receipt)}
+                            title="Xóa phiếu xuất kho"
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -334,6 +373,50 @@ export const ExportReceipts = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedReceipt(null);
+        }}
+        title="Xóa phiếu xuất kho"
+        size="medium"
+      >
+        <div className="delete-modal-content">
+          <p>
+            Bạn có chắc chắn muốn xóa phiếu xuất kho{" "}
+            <strong>{selectedReceipt?.receiptNumber}</strong>?
+            {selectedReceipt?.status === "completed" && (
+              <span style={{ display: "block", marginTop: "8px", color: "#f59e0b" }}>
+                Lưu ý: Các dụng cụ trong phiếu này sẽ được trả về kho.
+              </span>
+            )}
+            <span style={{ display: "block", marginTop: "8px" }}>
+              Hành động này không thể hoàn tác.
+            </span>
+          </p>
+          <div className="form-actions">
+            <button
+              className="btn-cancel"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setSelectedReceipt(null);
+              }}
+              disabled={deleting}
+            >
+              Hủy
+            </button>
+            <button
+              className="btn-submit btn-danger"
+              onClick={confirmDeleteReceipt}
+              disabled={deleting}
+            >
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

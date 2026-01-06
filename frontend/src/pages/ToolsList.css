@@ -494,6 +494,11 @@
   opacity: 1;
 }
 
+/* Luôn hiển thị nút yêu cầu cho user */
+.action-btn-request {
+  opacity: 1 !important;
+}
+
 .action-btn {
   padding: 0.375rem;
   border-radius: 0.375rem;
@@ -520,6 +525,15 @@
 .action-btn-delete:hover {
   color: #dc2626;
   background: #fee2e2;
+}
+
+.action-btn-request {
+  color: #10b981;
+}
+
+.action-btn-request:hover {
+  color: #065f46;
+  background: #d1fae5;
 }
 
 .action-btn .material-symbols-outlined {

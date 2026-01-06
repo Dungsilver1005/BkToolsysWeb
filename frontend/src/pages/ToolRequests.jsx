@@ -170,11 +170,37 @@ export const ToolRequests = () => {
                       <td>
                         <div>
                           <div className="tool-name-cell">
-                            {request.tool?.category || request.tool?.name || "N/A"}
+                            {request.toolName ||
+                              request.tool?.category ||
+                              request.tool?.name ||
+                              "N/A"}
                           </div>
                           <div className="tool-code-cell">
-                            Mã: {request.tool?.productCode || "N/A"}
+                            Mã: {request.toolCode || request.tool?.productCode || "N/A"}
                           </div>
+                          {request.quantity && (
+                            <div className="tool-quantity-cell">
+                              Số lượng: {request.quantity}
+                            </div>
+                          )}
+                          {request.availableQuantity !== undefined && (
+                            <div
+                              className={`stock-info ${
+                                request.hasEnoughStock ? "stock-ok" : "stock-warning"
+                              }`}
+                            >
+                              <span className="material-symbols-outlined">
+                                {request.hasEnoughStock ? "check_circle" : "warning"}
+                              </span>
+                              Còn lại: {request.availableQuantity}
+                              {!request.hasEnoughStock && (
+                                <span className="stock-alert">
+                                  {" "}
+                                  (Không đủ)
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="text-muted">{request.purpose || "N/A"}</td>
@@ -196,11 +222,11 @@ export const ToolRequests = () => {
                             <button
                               className="action-btn action-btn-approve"
                               onClick={() => {
-                                if (
-                                  window.confirm(
-                                    "Bạn có chắc chắn muốn duyệt yêu cầu này?"
-                                  )
-                                ) {
+                                const confirmMessage =
+                                  request.hasEnoughStock === false
+                                    ? `Cảnh báo: Số lượng còn lại trong kho (${request.availableQuantity}) không đủ so với yêu cầu (${request.quantity || 1}). Bạn vẫn muốn duyệt yêu cầu này?`
+                                    : "Bạn có chắc chắn muốn duyệt yêu cầu này?";
+                                if (window.confirm(confirmMessage)) {
                                   handleApprove(request);
                                 }
                               }}
@@ -225,16 +251,20 @@ export const ToolRequests = () => {
                           <button
                             className="action-btn"
                             onClick={() => {
-                              alert(
-                                `Chi tiết yêu cầu:\n\nNgười yêu cầu: ${
-                                  request.requestedBy?.fullName ||
-                                  request.requestedBy?.username
-                                }\nDụng cụ: ${request.tool?.name} (${
-                                  request.tool?.productCode
-                                })\nMục đích: ${request.purpose}\nThời gian: ${
-                                  request.expectedDuration
-                                }${request.rejectionReason ? `\nLý do từ chối: ${request.rejectionReason}` : ""}`
-                              );
+                              const toolInfo = request.toolName
+                                ? `${request.toolName} (${request.toolCode})`
+                                : request.tool
+                                ? `${request.tool.name || request.tool.category} (${request.tool.productCode})`
+                                : "N/A";
+                              const details = [
+                                `Người yêu cầu: ${request.requestedBy?.fullName || request.requestedBy?.username || "N/A"}`,
+                                `Dụng cụ: ${toolInfo}`,
+                                request.quantity ? `Số lượng: ${request.quantity}` : "",
+                                `Mục đích: ${request.purpose || "N/A"}`,
+                                `Thời gian: ${request.expectedDuration || "N/A"}`,
+                                request.rejectionReason ? `Lý do từ chối: ${request.rejectionReason}` : "",
+                              ].filter(Boolean).join("\n");
+                              alert(`Chi tiết yêu cầu:\n\n${details}`);
                             }}
                             title="Xem chi tiết"
                           >
@@ -269,9 +299,26 @@ export const ToolRequests = () => {
                 selectedRequest?.requestedBy?.username}
             </p>
             <p>
-              <strong>Dụng cụ:</strong> {selectedRequest?.tool?.name} (
-              {selectedRequest?.tool?.productCode})
+              <strong>Dụng cụ:</strong>{" "}
+              {selectedRequest?.toolName || selectedRequest?.tool?.name} (
+              {selectedRequest?.toolCode || selectedRequest?.tool?.productCode})
             </p>
+            {selectedRequest?.quantity && (
+              <p>
+                <strong>Số lượng:</strong> {selectedRequest.quantity}
+              </p>
+            )}
+            {selectedRequest?.availableQuantity !== undefined && (
+              <p>
+                <strong>Số lượng còn lại trong kho:</strong>{" "}
+                {selectedRequest.availableQuantity}
+                {!selectedRequest?.hasEnoughStock && (
+                  <span style={{ color: "#ff4d4f", marginLeft: "8px" }}>
+                    (Không đủ)
+                  </span>
+                )}
+              </p>
+            )}
           </div>
           <div className="form-group">
             <label>

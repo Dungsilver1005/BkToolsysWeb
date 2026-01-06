@@ -42,6 +42,13 @@ export const ToolsList = () => {
     }
   }, [filters, isAdmin, user]);
 
+  // Refresh pending requests when modal closes
+  useEffect(() => {
+    if (!showRequestModal && !isAdmin && user) {
+      fetchPendingRequests();
+    }
+  }, [showRequestModal, isAdmin, user]);
+
   const fetchPendingRequests = async () => {
     try {
       const response = await toolRequestService.getRequests({
@@ -149,17 +156,19 @@ export const ToolsList = () => {
     fetchTools();
   };
 
-  const hasPendingRequest = (toolId) => {
+  const hasPendingRequest = (toolId, toolCode) => {
     return pendingRequests.some(
-      (req) => req.tool._id === toolId || req.tool === toolId
+      (req) =>
+        (req.tool && (req.tool._id === toolId || req.tool === toolId)) ||
+        (req.toolCode && req.toolCode === toolCode)
     );
   };
 
   const canRequestTool = (tool) => {
     if (isAdmin) return false;
-    if (tool.isInUse) return false;
-    if (tool.location !== "warehouse") return false;
-    if (hasPendingRequest(tool._id)) return false;
+    // Cho phép user yêu cầu bất kỳ tool nào (vì có thể yêu cầu theo toolCode)
+    // Chỉ kiểm tra xem đã có yêu cầu pending chưa
+    if (hasPendingRequest(tool._id, tool.productCode)) return false;
     return true;
   };
 
@@ -472,21 +481,24 @@ export const ToolsList = () => {
                               </button>
                             </>
                           )}
-                          {!isAdmin && canRequestTool(tool) && (
-                            <button
-                              className="action-btn action-btn-request"
-                              onClick={() => handleRequestTool(tool)}
-                              title="Yêu cầu sử dụng"
-                            >
-                              <span className="material-symbols-outlined">
-                                add
-                              </span>
-                            </button>
-                          )}
-                          {!isAdmin && hasPendingRequest(tool._id) && (
-                            <span className="pending-badge">
-                              Đã gửi yêu cầu
-                            </span>
+                          {!isAdmin && (
+                            <>
+                              {hasPendingRequest(tool._id, tool.productCode) ? (
+                                <span className="pending-badge">
+                                  Đã gửi yêu cầu
+                                </span>
+                              ) : (
+                                <button
+                                  className="action-btn action-btn-request"
+                                  onClick={() => handleRequestTool(tool)}
+                                  title="Yêu cầu sử dụng"
+                                >
+                                  <span className="material-symbols-outlined">
+                                    add
+                                  </span>
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>

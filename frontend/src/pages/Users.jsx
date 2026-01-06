@@ -2,13 +2,17 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useToastContext } from "../context/ToastContext";
 import { userService } from "../services/userService";
+import { Modal } from "../components/Modal";
 import "./Users.css";
 
 export const Users = () => {
-  const { showError } = useToastContext();
+  const { showSuccess, showError } = useToastContext();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -41,6 +45,33 @@ export const Users = () => {
       user.department?.toLowerCase().includes(searchLower)
     );
   });
+
+  const handleDelete = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedUser) return;
+    setDeleting(true);
+    try {
+      const response = await userService.deleteUser(selectedUser._id);
+      if (response.success) {
+        showSuccess("Xóa người dùng thành công");
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        fetchUsers();
+      } else {
+        showError(response.message || "Xóa người dùng thất bại");
+      }
+    } catch (err) {
+      showError(
+        err.response?.data?.message || "Có lỗi xảy ra khi xóa người dùng"
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const getRoleBadge = (role) => {
     if (role === "admin") {
@@ -136,6 +167,13 @@ export const Users = () => {
                           >
                             <span className="material-symbols-outlined">visibility</span>
                           </Link>
+                          <button
+                            className="action-btn action-btn-delete"
+                            onClick={() => handleDelete(user)}
+                            title="Xóa người dùng"
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -146,6 +184,45 @@ export const Users = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        title="Xóa người dùng"
+        size="medium"
+      >
+        <div className="delete-modal-content">
+          <p>
+            Bạn có chắc chắn muốn xóa người dùng{" "}
+            <strong>
+              {selectedUser?.fullName || selectedUser?.username}
+            </strong>
+            ? Hành động này không thể hoàn tác.
+          </p>
+          <div className="form-actions">
+            <button
+              className="btn-cancel"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setSelectedUser(null);
+              }}
+              disabled={deleting}
+            >
+              Hủy
+            </button>
+            <button
+              className="btn-submit btn-danger"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

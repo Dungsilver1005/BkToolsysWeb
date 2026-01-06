@@ -180,4 +180,59 @@ router.post(
   }
 );
 
+// @route   DELETE /api/export-receipts/:id
+// @desc    Delete export receipt
+// @access  Private/Admin
+router.delete("/:id", protect, authorize("admin"), async (req, res) => {
+  try {
+    const receipt = await ExportReceipt.findById(req.params.id).populate(
+      "tools.tool"
+    );
+
+    if (!receipt) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy phiếu xuất kho",
+      });
+    }
+
+    // Nếu phiếu đã hoàn thành, cần trả dụng cụ về kho
+    if (receipt.status === "completed" && receipt.tools) {
+      for (const item of receipt.tools) {
+        if (item.tool) {
+          const tool = await Tool.findById(item.tool._id || item.tool);
+          if (tool) {
+            tool.isInUse = false;
+            tool.currentUser = null;
+            tool.location = "warehouse";
+            tool.history.push({
+              action: "import",
+              user: req.user._id,
+              fromLocation: "in_use",
+              toLocation: "warehouse",
+              notes: `Xóa phiếu xuất kho - Phiếu: ${receipt.receiptNumber}`,
+              date: new Date(),
+            });
+            await tool.save();
+          }
+        }
+      }
+    }
+
+    await receipt.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Xóa phiếu xuất kho thành công",
+    });
+  } catch (error) {
+    console.error("Delete export receipt error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

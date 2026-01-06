@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, message } from "antd";
+import { Modal, Form, Input, Button, InputNumber, message } from "antd";
 import { toolRequestService } from "../services/toolRequestService";
 
 const { TextArea } = Input;
@@ -9,20 +9,33 @@ export const RequestToolModal = ({ open, onClose, tool, onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && tool) {
+      form.setFieldsValue({
+        toolName: tool.category || tool.name || "",
+        toolCode: tool.productCode || "",
+        quantity: 1,
+        purpose: "",
+        expectedDuration: "",
+        notes: "",
+      });
+    } else if (open) {
       form.resetFields();
     }
-  }, [open, form]);
+  }, [open, tool, form]);
 
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      const response = await toolRequestService.createRequest({
-        tool: tool._id,
-        purpose: values.purpose,
-        expectedDuration: values.expectedDuration,
-        notes: values.notes || "",
-      });
+      const requestData = {
+        toolName: values.toolName.trim(),
+        toolCode: values.toolCode.trim().toUpperCase(),
+        quantity: parseInt(values.quantity) || 1,
+        purpose: values.purpose.trim(),
+        expectedDuration: values.expectedDuration.trim(),
+        notes: values.notes?.trim() || "",
+      };
+
+      const response = await toolRequestService.createRequest(requestData);
 
       if (response.success) {
         message.success("Gửi yêu cầu thành công");
@@ -59,26 +72,56 @@ export const RequestToolModal = ({ open, onClose, tool, onSuccess }) => {
 
   return (
     <Modal
-      title="Yêu cầu sử dụng dụng cụ"
+      title="Tạo yêu cầu sử dụng dụng cụ"
       open={open}
       onCancel={onClose}
       footer={null}
       width={600}
     >
-      {tool && (
-        <div style={{ marginBottom: 16 }}>
-          <p>
-            <strong>Dụng cụ:</strong> {tool.name} ({tool.productCode})
-          </p>
-        </div>
-      )}
-
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
         autoComplete="off"
       >
+        <Form.Item
+          name="toolName"
+          label="Tên dụng cụ"
+          rules={[{ required: true, message: "Vui lòng nhập tên dụng cụ!" }]}
+        >
+          <Input placeholder="Nhập tên dụng cụ" />
+        </Form.Item>
+
+        <Form.Item
+          name="toolCode"
+          label="Mã dụng cụ"
+          rules={[{ required: true, message: "Vui lòng nhập mã dụng cụ!" }]}
+        >
+          <Input
+            placeholder="Nhập mã dụng cụ"
+            onChange={(e) => {
+              form.setFieldsValue({
+                toolCode: e.target.value.toUpperCase(),
+              });
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="quantity"
+          label="Số lượng cần thiết"
+          rules={[
+            { required: true, message: "Vui lòng nhập số lượng!" },
+            { type: "number", min: 1, message: "Số lượng phải lớn hơn 0!" },
+          ]}
+        >
+          <InputNumber
+            min={1}
+            style={{ width: "100%" }}
+            placeholder="Nhập số lượng"
+          />
+        </Form.Item>
+
         <Form.Item
           name="purpose"
           label="Mục đích sử dụng"

@@ -13,7 +13,11 @@ router.post(
   "/",
   protect,
   [
-    body("tool").notEmpty().withMessage("Vui lòng chọn dụng cụ"),
+    body("toolName").notEmpty().withMessage("Vui lòng nhập tên dụng cụ"),
+    body("toolCode").notEmpty().withMessage("Vui lòng nhập mã dụng cụ"),
+    body("quantity")
+      .isInt({ min: 1 })
+      .withMessage("Số lượng phải là số nguyên lớn hơn 0"),
     body("purpose").notEmpty().withMessage("Vui lòng nhập mục đích sử dụng"),
     body("expectedDuration")
       .notEmpty()
@@ -29,42 +33,14 @@ router.post(
     }
 
     try {
-      const { tool, purpose, expectedDuration, notes } = req.body;
-
-      // Check if tool exists
-      const toolDoc = await Tool.findById(tool);
-      if (!toolDoc) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy dụng cụ",
-        });
-      }
-
-      // Check if tool is available
-      if (toolDoc.isInUse) {
-        return res.status(400).json({
-          success: false,
-          message: "Dụng cụ đang được sử dụng",
-        });
-      }
-
-      // Check if user already has a pending request for this tool
-      const existingRequest = await ToolRequest.findOne({
-        tool,
-        requestedBy: req.user._id,
-        status: "pending",
-      });
-
-      if (existingRequest) {
-        return res.status(400).json({
-          success: false,
-          message: "Bạn đã có yêu cầu đang chờ duyệt cho dụng cụ này",
-        });
-      }
+      const { toolName, toolCode, quantity, purpose, expectedDuration, notes } =
+        req.body;
 
       // Create request
       const request = await ToolRequest.create({
-        tool,
+        toolName,
+        toolCode: toolCode.toUpperCase().trim(),
+        quantity: parseInt(quantity),
         requestedBy: req.user._id,
         purpose,
         expectedDuration,
@@ -72,7 +48,6 @@ router.post(
       });
 
       const populatedRequest = await ToolRequest.findById(request._id)
-        .populate("tool", "name productCode")
         .populate("requestedBy", "username fullName");
 
       res.status(201).json({
@@ -123,10 +98,34 @@ router.get("/", protect, async (req, res) => {
       .populate("reviewedBy", "username fullName")
       .sort({ createdAt: -1 });
 
+    // Tính số lượng còn lại cho mỗi yêu cầu
+    const requestsWithStock = await Promise.all(
+      requests.map(async (request) => {
+        const requestObj = request.toObject();
+        // Lấy toolCode từ request hoặc từ tool đã populate
+        const toolCode = request.toolCode || request.tool?.productCode;
+        if (toolCode) {
+          // Đếm số lượng dụng cụ có sẵn (không đang sử dụng, không bảo trì, không hỏng)
+          const availableCount = await Tool.countDocuments({
+            productCode: toolCode,
+            isInUse: false,
+            location: { $ne: "maintenance" },
+            status: { $ne: "unusable" },
+          });
+          requestObj.availableQuantity = availableCount;
+          requestObj.hasEnoughStock = availableCount >= (request.quantity || 1);
+        } else {
+          requestObj.availableQuantity = 0;
+          requestObj.hasEnoughStock = false;
+        }
+        return requestObj;
+      })
+    );
+
     res.json({
       success: true,
-      count: requests.length,
-      data: requests,
+      count: requestsWithStock.length,
+      data: requestsWithStock,
     });
   } catch (error) {
     console.error("Get tool requests error:", error);
@@ -201,7 +200,43 @@ router.put("/:id/approve", protect, authorize("admin"), async (req, res) => {
       });
     }
 
-    const tool = await Tool.findById(request.tool._id);
+    // Kiểm tra số lượng còn lại trong kho
+    const requestedQuantity = request.quantity || 1;
+    let availableTools = [];
+
+    if (request.tool) {
+      // Nếu đã có tool ID, kiểm tra tool đó
+      const tool = await Tool.findById(request.tool._id || request.tool);
+      if (tool && !tool.isInUse && tool.location !== "maintenance" && tool.status !== "unusable") {
+        availableTools = [tool];
+      }
+    } else if (request.toolCode) {
+      // Tìm các tool có sẵn theo toolCode
+      availableTools = await Tool.find({
+        productCode: request.toolCode,
+        isInUse: false,
+        location: { $ne: "maintenance" },
+        status: { $ne: "unusable" },
+      }).limit(requestedQuantity);
+    }
+
+    if (availableTools.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy dụng cụ có sẵn trong kho",
+      });
+    }
+
+    if (availableTools.length < requestedQuantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Chỉ còn ${availableTools.length} dụng cụ trong kho, không đủ so với yêu cầu ${requestedQuantity}`,
+      });
+    }
+
+    // Gán các tool cho user (hiện tại chỉ gán tool đầu tiên để đơn giản)
+    // Nếu cần gán nhiều tool, có thể mở rộng logic sau
+    const tool = availableTools[0];
 
     // Double check tool is still available
     if (tool.isInUse) {
@@ -219,6 +254,12 @@ router.put("/:id/approve", protect, authorize("admin"), async (req, res) => {
       });
     }
 
+    // Cập nhật tool ID vào request nếu chưa có
+    if (!request.tool) {
+      request.tool = tool._id;
+      await request.save();
+    }
+
     // Update tool status
     tool.isInUse = true;
     tool.currentUser = request.requestedBy;
@@ -230,7 +271,7 @@ router.put("/:id/approve", protect, authorize("admin"), async (req, res) => {
       user: request.requestedBy,
       fromLocation: "warehouse",
       toLocation: "in_use",
-      notes: `Yêu cầu được duyệt - Mục đích: ${request.purpose}`,
+      notes: `Yêu cầu được duyệt - Mục đích: ${request.purpose} - Số lượng yêu cầu: ${requestedQuantity}`,
       date: new Date(),
     });
     await tool.save();
@@ -410,7 +451,22 @@ router.put("/:id/return", protect, async (req, res) => {
       });
     }
 
-    const tool = await Tool.findById(request.tool._id);
+    // Kiểm tra nếu request có tool ID
+    if (!request.tool) {
+      return res.status(400).json({
+        success: false,
+        message: "Yêu cầu này chưa được gán dụng cụ cụ thể",
+      });
+    }
+
+    const tool = await Tool.findById(request.tool._id || request.tool);
+
+    if (!tool) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy dụng cụ",
+      });
+    }
 
     // Check if tool is actually assigned to this user
     if (
