@@ -213,15 +213,6 @@ export const ToolForm = ({
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label>Danh mục</label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
             <label>Trạng thái</label>
             <select
               name="status"

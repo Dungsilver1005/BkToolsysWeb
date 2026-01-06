@@ -13,6 +13,9 @@ export const Statistics = () => {
   });
   const [mostUsedTools, setMostUsedTools] = useState([]);
   const [warningTools, setWarningTools] = useState([]);
+  const [toolTypeStats, setToolTypeStats] = useState([]);
+  const [toolTypeSearch, setToolTypeSearch] = useState("");
+  const [toolTypeTools, setToolTypeTools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     category: "",
@@ -22,6 +25,7 @@ export const Statistics = () => {
 
   useEffect(() => {
     fetchStatistics();
+    fetchToolTypeStats();
   }, [filters]);
 
   const fetchStatistics = async () => {
@@ -102,6 +106,79 @@ export const Statistics = () => {
     } catch (err) {
       console.error("Error fetching warning tools:", err);
     }
+  };
+
+  const fetchToolTypeStats = async () => {
+    try {
+      // Lấy toàn bộ danh sách dụng cụ, dùng cho phần tìm kiếm theo tên dụng cụ
+      const response = await toolService.getTools({ limit: 1000 });
+      if (!response.success) return;
+
+      const tools = response.data || [];
+      setToolTypeTools(tools);
+
+      // Nếu đang có từ khóa tìm kiếm thì tính lại thống kê sau khi load dữ liệu
+      if (toolTypeSearch.trim()) {
+        updateToolTypeStatsForSearch(tools, toolTypeSearch);
+      }
+    } catch (err) {
+      console.error("Error fetching tool type stats:", err);
+    }
+  };
+
+  const updateToolTypeStatsForSearch = (tools, searchText) => {
+    const keyword = searchText.trim().toUpperCase();
+
+    if (!keyword) {
+      setToolTypeStats([]);
+      return;
+    }
+
+    // Lọc theo tên dụng cụ
+    const matchedTools = tools.filter((tool) =>
+      (tool.name || "").toUpperCase().includes(keyword)
+    );
+
+    if (matchedTools.length === 0) {
+      setToolTypeStats([]);
+      return;
+    }
+
+    // Nhóm theo tên dụng cụ và thống kê theo vị trí
+    const grouped = matchedTools.reduce((acc, tool) => {
+      const typeName = (tool.name || "Không tên").trim();
+      if (!acc[typeName]) {
+        acc[typeName] = {
+          name: typeName,
+          total: 0,
+          warehouse: 0,
+          inUse: 0,
+          maintenance: 0,
+          disposed: 0,
+        };
+      }
+
+      const group = acc[typeName];
+      group.total += 1;
+
+      const location = tool.location || "warehouse";
+      if (location === "warehouse") group.warehouse += 1;
+      else if (location === "in_use") group.inUse += 1;
+      else if (location === "maintenance") group.maintenance += 1;
+      else if (location === "disposed") group.disposed += 1;
+      else group.warehouse += 1;
+
+      return acc;
+    }, {});
+
+    const groupedArray = Object.values(grouped).sort(
+      (a, b) => b.total - a.total
+    );
+    setToolTypeStats(groupedArray);
+  };
+
+  const handleSearchToolType = () => {
+    updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch);
   };
 
   const calculatePercentages = () => {
@@ -430,37 +507,105 @@ export const Statistics = () => {
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="bottom-grid">
-          {/* Cost Trend */}
-          <div className="chart-card cost-chart">
-            <h3 className="chart-title">Chi phí bảo trì (6 tháng)</h3>
-            <div className="column-chart">
-              {[40, 35, 60, 45, 30, 85].map((height, index) => (
-                <div key={index} className="column-item">
-                  <div
-                    className={`column-bar ${
-                      index === 5 ? "column-active" : ""
-                    }`}
-                    style={{ height: `${height}%` }}
-                  >
-                    <div className="column-tooltip">
-                      {index === 5 ? "15tr" : `${Math.round(height * 0.2)}tr`}
-                    </div>
-                  </div>
-                  <span
-                    className={`column-label ${
-                      index === 5 ? "column-active-label" : ""
-                    }`}
-                  >
-                    T{index + 1}
-                  </span>
-                </div>
-              ))}
+        {/* Thống kê theo loại dụng cụ */}
+        <div className="chart-card type-chart-card">
+          <div className="chart-header type-chart-header">
+            <div className="type-chart-text">
+              <h3 className="chart-title">
+                Thống kê theo loại dụng cụ (nhóm theo tên)
+              </h3>
+              <span className="chart-subtitle">
+                Biểu đồ tròn theo vị trí: Kho / Đang dùng / Bảo trì / Đã thanh lý
+              </span>
+            </div>
+            <div className="type-search">
+              <input
+                type="text"
+                className="type-search-input"
+                placeholder="Nhập tên dụng cụ (VD: Dao phay...)"
+                value={toolTypeSearch}
+                onChange={(e) => setToolTypeSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchToolType();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="type-search-button"
+                onClick={handleSearchToolType}
+              >
+                Tìm
+              </button>
             </div>
           </div>
+          {toolTypeStats.length === 0 ? (
+            <div className="empty-chart">
+              {toolTypeSearch.trim()
+                ? "Không tìm thấy dụng cụ phù hợp"
+                : "Nhập tên dụng cụ để xem thống kê"}
+            </div>
+          ) : (
+            <div className="type-charts-grid">
+              {toolTypeStats.map((group) => {
+                const total = Math.max(group.total, 1);
+                const warehousePct = Math.round((group.warehouse / total) * 100);
+                const inUsePct = Math.round((group.inUse / total) * 100);
+                const maintenancePct = Math.round((group.maintenance / total) * 100);
+                const disposedPct = Math.round((group.disposed / total) * 100);
 
-          {/* Warning Table */}
+                const segment1 = warehousePct;
+                const segment2 = segment1 + inUsePct;
+                const segment3 = segment2 + maintenancePct;
+                const segment4 = 100; // disposed fills phần còn lại
+
+                return (
+                  <div key={group.name} className="type-chart-item">
+                    <div
+                      className="type-donut"
+                      style={{
+                        background: `conic-gradient(
+                          #22c55e 0% ${segment1}%,
+                          #3b82f6 ${segment1}% ${segment2}%,
+                          #f59e0b ${segment2}% ${segment3}%,
+                          #ef4444 ${segment3}% ${segment4}%
+                        )`,
+                      }}
+                    >
+                      <div className="type-donut-center">
+                        <span className="type-total">{group.total}</span>
+                        <span className="type-label">Tổng</span>
+                      </div>
+                    </div>
+                    <div className="type-info">
+                      <p className="type-name">{group.name}</p>
+                      <div className="type-legend">
+                        <span className="legend-dot legend-green"></span>
+                        <span>Kho: {group.warehouse}</span>
+                      </div>
+                      <div className="type-legend">
+                        <span className="legend-dot legend-blue"></span>
+                        <span>Đang dùng: {group.inUse}</span>
+                      </div>
+                      <div className="type-legend">
+                        <span className="legend-dot legend-orange"></span>
+                        <span>Bảo trì: {group.maintenance}</span>
+                      </div>
+                      <div className="type-legend">
+                        <span className="legend-dot legend-red"></span>
+                        <span>Đã thanh lý: {group.disposed}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Section - Warning Table */}
+        <div className="bottom-grid">
           <div className="chart-card warning-table-card">
             <div className="table-header">
               <h3 className="chart-title">Cần chú ý gấp</h3>

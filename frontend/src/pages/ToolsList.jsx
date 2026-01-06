@@ -384,7 +384,7 @@ export const ToolsList = () => {
               <thead>
                 <tr>
                   <th className="w-1/4">Tên dụng cụ</th>
-                  <th>Mã số</th>
+                  <th>Mã dụng cụ</th>
                   <th>Vị trí</th>
                   <th>Lần bảo trì cuối</th>
                   <th>Tình trạng</th>

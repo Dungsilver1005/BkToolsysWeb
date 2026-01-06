@@ -95,7 +95,7 @@ export const ToolsInUse = () => {
               <thead>
                 <tr>
                   <th>Tên dụng cụ</th>
-                  <th>Mã số</th>
+                  <th>Mã dụng cụ</th>
                   <th>Loại dụng cụ</th>
                   <th>Người sử dụng</th>
                   <th>Số lần sử dụng</th>
