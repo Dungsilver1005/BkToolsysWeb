@@ -394,29 +394,6 @@ export const Dashboard = () => {
               <span className="stat-note">cần xử lý ngay</span>
             </div>
           </div>
-
-          <div className="dashboard-stat-card">
-            <div className="stat-header">
-              <div>
-                <p className="stat-label">Tồn kho</p>
-                <h3 className="stat-value">
-                  {loading ? "..." : stats.lowStock.toLocaleString()}
-                </h3>
-              </div>
-              <div className="stat-icon stat-icon-orange">
-                <span className="material-symbols-outlined">warning</span>
-              </div>
-            </div>
-            <div className="stat-footer">
-              <span className="stat-trend stat-trend-down">
-                <span className="material-symbols-outlined">
-                  arrow_downward
-                </span>
-                {stats.lowStock > 0 ? `${stats.lowStock} mục` : "Đủ"}
-              </span>
-              <span className="stat-note">cần nhập thêm</span>
-            </div>
-          </div>
         </div>
 
         {/* Main Grid: Charts & Alerts */}
