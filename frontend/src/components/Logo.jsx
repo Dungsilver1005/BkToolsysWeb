@@ -37,7 +37,7 @@ export const Logo = ({ collapsed = false, size = "medium" }) => {
                 </div>
               </div>
               <div className="logo-base logo-base-collapsed">
-                <span className="logo-text logo-text-collapsed">BKTOOLSYS</span>
+                <span className="logo-text logo-text-collapsed">I-TOOLSYS</span>
               </div>
             </div>
           )}
@@ -72,7 +72,7 @@ export const Logo = ({ collapsed = false, size = "medium" }) => {
               </div>
             </div>
             <div className="logo-base">
-              <span className="logo-text">BKTOOLSYS</span>
+              <span className="logo-text">I-TOOLSYS</span>
             </div>
           </div>
         )}

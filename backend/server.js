@@ -2,12 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const createAdminIfNotExists = require("./utils/createAdmin");
 
 // Load env vars
 dotenv.config();
 
 // Connect to database
-connectDB();
+// connectDB();
 
 const app = express();
 
@@ -58,7 +59,24 @@ app.get("/api/health", (req, res) => {
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "0.0.0.0"; // Listen trên tất cả interfaces
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-});
+// app.listen(PORT, HOST, () => {
+//   console.log(`Server running on http://${HOST}:${PORT}`);
+//   console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+// });
+const startServer = async () => {
+  try {
+    await connectDB(); // 1️⃣ Kết nối DB trước
+
+    await createAdminIfNotExists(); // 2️⃣ Tạo admin nếu chưa có
+
+    app.listen(PORT, HOST, () => {
+      console.log(`Server running on http://${HOST}:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

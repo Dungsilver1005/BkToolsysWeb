@@ -215,8 +215,46 @@ router.post(
       // Remove history from req.body if it exists, we'll add our own
       const { history, ...toolFields } = req.body;
 
+      // Logic to assign slotIndex (1-9)
+      const toolName = (toolFields.name || "").trim();
+
+      // 1. Find existing slots for this tool name that are not full (< 10 items)
+      const existingSlotsForName = await Tool.aggregate([
+        { $match: { name: toolName } },
+        { $group: { _id: "$slotIndex", count: { $sum: 1 } } },
+        { $match: { count: { $lt: 10 } } },
+        { $sort: { _id: 1 } }
+      ]);
+
+      let assignedSlotIndex;
+
+      if (existingSlotsForName.length > 0) {
+        // Use the first available slot index for this tool name
+        assignedSlotIndex = existingSlotsForName[0]._id;
+      } else {
+        // 2. New tool name or all existing slots for this name are full
+        // Find all currently occupied slot indices
+        const occupiedSlots = await Tool.distinct("slotIndex");
+
+        // Find the first available index from 1 to 9
+        for (let i = 1; i <= 9; i++) {
+          if (!occupiedSlots.includes(i)) {
+            assignedSlotIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (!assignedSlotIndex) {
+        return res.status(400).json({
+          success: false,
+          message: "Tủ dụng cụ đã đầy (9/9 ngăn)",
+        });
+      }
+
       const toolData = {
         ...toolFields,
+        slotIndex: assignedSlotIndex,
         history: [
           {
             action: "import",
