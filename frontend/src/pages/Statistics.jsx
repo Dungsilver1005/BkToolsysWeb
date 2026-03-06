@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toolService } from "../services/toolService";
+import { plcService } from "../services/plcService";
 import "./Statistics.css";
 
 export const Statistics = () => {
@@ -23,11 +24,31 @@ export const Statistics = () => {
     status: "",
     location: "",
   });
+  const [plcData, setPlcData] = useState({});
+
+  // Hàm lấy dữ liệu PLC
+  const fetchPlcData = async () => {
+    try {
+      const res = await plcService.getPlcData();
+      setPlcData(res.data);
+    } catch (err) {
+      console.error("PLC error:", err);
+    }
+  };
 
   useEffect(() => {
     fetchStatistics();
     fetchToolTypeStats();
   }, [filters]);
+  useEffect(() => {
+    fetchPlcData();
+
+    const interval = setInterval(() => {
+      fetchPlcData();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchStatistics = async () => {
     setLoading(true);

@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const createAdminIfNotExists = require("./utils/createAdmin");
+const getPlcData = require("./utils/plc_connected");
 
 // Load env vars
 dotenv.config();
@@ -50,6 +51,15 @@ app.use("/api/tools", require("./routes/tool"));
 app.use("/api/users", require("./routes/user"));
 app.use("/api/export-receipts", require("./routes/exportReceipts"));
 app.use("/api/tool-requests", require("./routes/toolRequests"));
+
+// API lấy dữ liệu PLC
+app.get("/api/plc-data", (req, res) => {
+  const data = getPlcData();
+  res.json({
+    success: true,
+    data: data
+  });
+});
 
 // Health check
 app.get("/api/health", (req, res) => {
