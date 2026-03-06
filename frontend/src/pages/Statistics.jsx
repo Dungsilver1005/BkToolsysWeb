@@ -49,6 +49,11 @@ export const Statistics = () => {
 
     return () => clearInterval(interval);
   }, []);
+  useEffect(() => {
+  if (toolTypeTools.length > 0) {
+    updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch);
+  }
+  }, [plcData, toolTypeTools]);
 
   const fetchStatistics = async () => {
     setLoading(true);
@@ -167,7 +172,7 @@ export const Statistics = () => {
             slotIndex: idx,
           };
         }
-        statsBySlot[idx].count += 1;
+        statsBySlot[idx].count = statsBySlot[idx].count += 1;;
       } else {
         // Legacy tool with no slotIndex — handle in step 2
         toolsWithoutSlot.push(tool);
