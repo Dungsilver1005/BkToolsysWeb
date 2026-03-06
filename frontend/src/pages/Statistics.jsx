@@ -30,7 +30,7 @@ export const Statistics = () => {
   const fetchPlcData = async () => {
     try {
       const res = await plcService.getPlcData();
-      setPlcData(res.data);
+      setPlcData({...res.data });
     } catch (err) {
       console.error("PLC error:", err);
     }
@@ -53,7 +53,7 @@ export const Statistics = () => {
   if (toolTypeTools.length > 0) {
     updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch);
   }
-  }, [plcData, toolTypeTools]);
+  }, [plcData, toolTypeTools, toolTypeSearch]);
 
   const fetchStatistics = async () => {
     setLoading(true);
@@ -163,16 +163,17 @@ export const Statistics = () => {
     const toolsWithoutSlot = [];
 
     tools.forEach(tool => {
-      const idx = tool.slotIndex;
+      const idx = Number(tool.slotIndex);
       if (idx && idx >= 1 && idx <= 9) {
         if (!statsBySlot[idx]) {
           statsBySlot[idx] = {
             name: tool.name || "Không tên",
-            count: 0,
+            count: plcData[`SL${idx}`] || 0,
             slotIndex: idx,
           };
+        } else {
+        statsBySlot[idx].count = plcData[`SL${idx}`] || 0;
         }
-        statsBySlot[idx].count = statsBySlot[idx].count += 1;;
       } else {
         // Legacy tool with no slotIndex — handle in step 2
         toolsWithoutSlot.push(tool);
