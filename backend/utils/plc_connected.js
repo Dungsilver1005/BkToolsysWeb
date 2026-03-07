@@ -66,21 +66,62 @@ conn.initiateConnection(plcConfig, (err) => {
                 console.error("❌ Lỗi đọc PLC:", err);
                 return;
             }
-            plcData = values;
 
-            console.log(`[${new Date().toLocaleTimeString()}]`);
-            console.log("SL1:", values.SL1);
-            console.log("SL2:", values.SL2);
-            console.log("SL3:", values.SL3);
-            console.log("SL4:", values.SL4);
-            console.log("SL5:", values.SL5);
-            console.log("SL6:", values.SL6);
-            console.log("SL7:", values.SL7);
-            console.log("SL8:", values.SL8);
-            console.log("SL9:", values.SL9);
+            // ✅ CÁCH FIX SỰ ĐỒNG BỘ: Chỉ update các key hợp lệ từ values, giữ lại cấu trúc ban đầu
+            if (values && typeof values === 'object') {
+                plcData = {
+                    SL1: values.SL1 !== undefined ? values.SL1 : plcData.SL1,
+                    SL2: values.SL2 !== undefined ? values.SL2 : plcData.SL2,
+                    SL3: values.SL3 !== undefined ? values.SL3 : plcData.SL3,
+                    SL4: values.SL4 !== undefined ? values.SL4 : plcData.SL4,
+                    SL5: values.SL5 !== undefined ? values.SL5 : plcData.SL5,
+                    SL6: values.SL6 !== undefined ? values.SL6 : plcData.SL6,
+                    SL7: values.SL7 !== undefined ? values.SL7 : plcData.SL7,
+                    SL8: values.SL8 !== undefined ? values.SL8 : plcData.SL8,
+                    SL9: values.SL9 !== undefined ? values.SL9 : plcData.SL9,
+                };
+            }
+
+            console.log(`[${new Date().toLocaleTimeString()}] Dữ liệu nhận từ PLC mượt:`, plcData);
 
         });
 
-    }, 500);
+    }, 1000);
 });
 module.exports = () => plcData;
+
+
+
+
+// let plcData = {
+//     SL1: 0,
+//     SL2: 0,
+//     SL3: 0,
+//     SL4: 0,
+//     SL5: 0,
+//     SL6: 0,
+//     SL7: 0,
+//     SL8: 0,
+//     SL9: 0
+// };
+
+// // Fake PLC data mỗi 2s
+// setInterval(() => {
+
+//     plcData = {
+//         SL1: Math.floor(Math.random() * 10),
+//         SL2: Math.floor(Math.random() * 10),
+//         SL3: Math.floor(Math.random() * 10),
+//         SL4: Math.floor(Math.random() * 10),
+//         SL5: Math.floor(Math.random() * 10),
+//         SL6: Math.floor(Math.random() * 10),
+//         SL7: Math.floor(Math.random() * 10),
+//         SL8: Math.floor(Math.random() * 10),
+//         SL9: Math.floor(Math.random() * 10)
+//     };
+
+//     console.log("Fake PLC:", plcData);
+
+// }, 2000);
+
+// module.exports = () => plcData;
