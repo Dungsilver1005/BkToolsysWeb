@@ -74,8 +74,26 @@ const fetchPlcData = async () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Update counts automatically when plcData changes, BUT only if actively searching
+  // Update counts and total when plcData or tool list changes
   useEffect(() => {
+    // Cập nhật tổng số = PLC base + DB delta
+    if (Object.keys(plcData).length > 0) {
+      const dbCountBySlot = {};
+      toolTypeTools.forEach(tool => {
+        const idx = Number(tool.slotIndex);
+        if (idx >= 1 && idx <= 9) {
+          dbCountBySlot[idx] = (dbCountBySlot[idx] || 0) + 1;
+        }
+      });
+      let total = 0;
+      for (let i = 1; i <= 9; i++) {
+        total += (plcData[`SL${i}`] || 0) + (dbCountBySlot[i] || 0);
+      }
+      if (total > 0) {
+        setStats(prev => ({ ...prev, totalTools: total }));
+      }
+    }
+
     if (hasSearched && toolTypeSearch.trim()) {
       updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch, plcData);
     }
@@ -191,31 +209,33 @@ const updateToolTypeStatsForSearch = (tools, searchText, currentPlcData = plcDat
     return;
   }
 
-  // Build a map of slotIndex → name from DB data
+  // Build a map of slotIndex → { name, dbCount } from DB data
   const statsBySlot = {};
   tools.forEach(tool => {
     const idx = Number(tool.slotIndex);
     if (idx >= 1 && idx <= 9) {
       if (!statsBySlot[idx]) {
-        // Use the first tool's name for this slot
-        statsBySlot[idx] = { name: tool.name || "Không tên" };
+        statsBySlot[idx] = { name: tool.name || "Không tên", dbCount: 0 };
       }
+      statsBySlot[idx].dbCount += 1;
     }
   });
 
-  // Build full 9-slot result using PLC data for counts
+  // Build full 9-slot result: count = PLC base + DB delta
   const result = [];
   let matchCount = 0;
   for (let i = 1; i <= 9; i++) {
     const slotData = statsBySlot[i];
     const plcCount = currentPlcData?.[`SL${i}`] ?? 0;
-    
+    const dbCount = slotData?.dbCount ?? 0;
+    const totalCount = plcCount + dbCount;
+
     if (slotData && slotData.name.toUpperCase().includes(keyword)) {
       result.push({
         slotIndex: i,
         name: slotData.name,
-        count: plcCount,
-        warning: plcCount <= 5,
+        count: totalCount,
+        warning: totalCount <= 5,
         isEmpty: false,
       });
       matchCount++;
