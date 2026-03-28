@@ -105,7 +105,7 @@ module.exports = () => plcData;
 //     SL9: 0
 // };
 
-// // Fake PLC data mỗi 2s
+// // Fake PLC data mỗi 2s (Ngẫu nhiên)
 // setInterval(() => {
 
 //     plcData = {
@@ -120,7 +120,27 @@ module.exports = () => plcData;
 //         SL9: Math.floor(Math.random() * 10)
 //     };
 
-//     console.log("Fake PLC:", plcData);
+//     console.log("Fake PLC (Random):", plcData);
+
+// }, 2000);
+
+
+// Fake PLC tĩnh (Cố định từ 1 đến 9)
+// setInterval(() => {
+
+//     plcData = {
+//         SL1: 1,
+//         SL2: 2,
+//         SL3: 3,
+//         SL4: 4,
+//         SL5: 5,
+//         SL6: 6,
+//         SL7: 7,
+//         SL8: 8,
+//         SL9: 9
+//     };
+
+//     console.log("Fake PLC (Static):", plcData);
 
 // }, 2000);
 
