@@ -15,15 +15,15 @@ const plcConfig = {
 
 // Mapping slotIndex (1→9) sang địa chỉ PLC BOOL
 const TRIGGER_MAP = {
-    1: 'DB1,X0.0',
-    2: 'DB1,X0.1',
-    3: 'DB1,X0.2',
-    4: 'DB1,X0.3',
-    5: 'DB1,X0.4',
-    6: 'DB1,X0.5',
-    7: 'DB1,X0.6',
-    8: 'DB1,X0.7',
-    9: 'DB1,X1.0',
+    1: 'DB15,X0.0',
+    2: 'DB15,X0.1',
+    3: 'DB15,X0.2',
+    4: 'DB15,X0.3',
+    5: 'DB15,X0.4',
+    6: 'DB15,X0.5',
+    7: 'DB15,X0.6',
+    8: 'DB15,X0.7',
+    9: 'DB15,X1.0',
 };
 
 // Mapping tên biến → địa chỉ PLC (cho setTranslationCB)
@@ -76,7 +76,7 @@ function delay(ms) {
 
 /**
  * Gửi xung trigger đến 1 slot trên PLC
- * TRUE → delay 1000ms → FALSE
+ * TRUE → delay 5000ms → FALSE
  * @param {number} slotIndex - Số ngăn (1 → 9)
  */
 async function triggerSlot(slotIndex) {
@@ -94,8 +94,8 @@ async function triggerSlot(slotIndex) {
         await writeBit(varName, true);
         console.log(`🔔 Trigger ON slot ${slotIndex}`);
 
-        // Bước 2: Delay 1000ms
-        await delay(1000);
+        // Bước 2: Delay 5000ms
+        await delay(5000);
 
         // Bước 3: Ghi FALSE (reset)
         await writeBit(varName, false);
@@ -123,15 +123,15 @@ module.exports = { triggerSlot };
 
 // // Mapping slotIndex (1→9) sang địa chỉ PLC BOOL
 // const TRIGGER_MAP = {
-//     1: 'DB1,X0.0',
-//     2: 'DB1,X0.1',
-//     3: 'DB1,X0.2',
-//     4: 'DB1,X0.3',
-//     5: 'DB1,X0.4',
-//     6: 'DB1,X0.5',
-//     7: 'DB1,X0.6',
-//     8: 'DB1,X0.7',
-//     9: 'DB1,X1.0',
+//     1: 'DB15,X0.0',
+//     2: 'DB15,X0.1',
+//     3: 'DB15,X0.2',
+//     4: 'DB15,X0.3',
+//     5: 'DB15,X0.4',
+//     6: 'DB15,X0.5',
+//     7: 'DB15,X0.6',
+//     8: 'DB15,X0.7',
+//     9: 'DB15,X1.0',
 // };
 
 // // Object giả lập trạng thái PLC (lưu giá trị hiện tại của từng bit)
@@ -151,7 +151,7 @@ module.exports = { triggerSlot };
 
 // /**
 //  * Gửi xung trigger giả lập đến 1 slot
-//  * TRUE → delay 1000ms → FALSE
+//  * TRUE → delay 5000ms → FALSE
 //  * @param {number} slotIndex - Số ngăn (1 → 9)
 //  */
 // async function triggerSlot(slotIndex) {
@@ -168,8 +168,8 @@ module.exports = { triggerSlot };
 //         await writeBit(address, true);
 //         console.log(`🔔 Trigger ON slot ${slotIndex}`);
 
-//         // Bước 2: Delay 1000ms
-//         await delay(1000);
+//         // Bước 2: Delay 5000ms
+//         await delay(5000);
 
 //         // Bước 3: Ghi FALSE (reset)
 //         await writeBit(address, false);
