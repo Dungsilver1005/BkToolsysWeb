@@ -2,7 +2,6 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const Tool = require("../models/Tool");
 const { protect, authorize } = require("../middleware/auth");
-const getPlcData = require("../utils/plc_connected");
 
 const router = express.Router();
 
@@ -216,38 +215,31 @@ router.post(
       // Remove history from req.body if it exists, we'll add our own
       const { history, ...toolFields } = req.body;
 
-      // Logic to assign slotIndex (1-9) — Hybrid: PLC + DB
+      // Logic to assign slotIndex (1-9) — DB only
       const toolName = (toolFields.name || "").trim();
-      const plcData = getPlcData();
 
-      // Kiểm tra tổng số tủ = sum(PLC) + sum(DB). Nếu >= 90 thì từ chối
+      // Kiểm tra tổng số tủ từ DB. Nếu >= 90 thì từ chối
       const totalDb = await Tool.countDocuments();
-      const totalPlc = [1,2,3,4,5,6,7,8,9].reduce((s, i) => s + (plcData?.[`SL${i}`] || 0), 0);
-      if (totalPlc + totalDb >= 90) {
+      if (totalDb >= 90) {
         return res.status(400).json({
           success: false,
           message: "Tủ dụng cụ đã đầy (90/90 dụng cụ)",
         });
       }
 
-      // 1. Tìm ngăn đang chứa cùng tên và chưa đầy (PLC + DB < 10)
+      // 1. Tìm ngăn đang chứa cùng tên và chưa đầy (DB count < 10)
       const slotsForName = await Tool.aggregate([
         { $match: { name: toolName } },
-        { $group: { _id: "$slotIndex", dbCount: { $sum: 1 } } },
+        { $group: { _id: "$slotIndex", count: { $sum: 1 } } },
+        { $match: { count: { $lt: 10 } } },
         { $sort: { _id: 1 } }
       ]);
 
-      // Lọc slot chưa đầy: PLC(SLi) + dbCount < 10
-      const availableSlots = slotsForName.filter(slot => {
-        const plcCount = plcData?.[`SL${slot._id}`] || 0;
-        return (plcCount + slot.dbCount) < 10;
-      });
-
       let assignedSlotIndex;
 
-      if (availableSlots.length > 0) {
+      if (slotsForName.length > 0) {
         // Dùng ngăn đầu tiên còn chỗ
-        assignedSlotIndex = availableSlots[0]._id;
+        assignedSlotIndex = slotsForName[0]._id;
       } else {
         // 2. Tên mới hoặc tất cả ngăn cùng tên đã đầy → tìm ngăn trống
         const occupiedSlots = await Tool.distinct("slotIndex");

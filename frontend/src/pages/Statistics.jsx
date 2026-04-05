@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toolService } from "../services/toolService";
-import { plcService } from "../services/plcService";
 import "./Statistics.css";
 
 export const Statistics = () => {
@@ -25,79 +24,11 @@ export const Statistics = () => {
     status: "",
     location: "",
   });
-  const [plcData, setPlcData] = useState({});
-
-  // Hàm lấy dữ liệu PLC
-//   const fetchPlcData = async () => {
-//     try {
-//       const res = await plcService.getPlcData();
-
-//       if (res.success) {
-//         setPlcData(res.data);
-//     }
-
-//   }   catch (err) {
-//       console.error("PLC error:", err);
-//   }
-// };
-
-  // Hàm lấy dữ liệu PLC
-const fetchPlcData = async () => {
-  try {
-    const res = await plcService.getPlcData();
-
-    console.log("Response từ backend:", res);   // 👈 xem toàn bộ response
-
-    if (res.success) {
-      console.log("PLC DATA:", res.data);       // 👈 dữ liệu PLC thật
-
-      setPlcData(res.data);
-    }
-
-  } catch (err) {
-    console.error("PLC error:", err);
-  }
-};
-
 
   useEffect(() => {
     fetchStatistics();
     fetchToolTypeStats();
   }, [filters]);
-  useEffect(() => {
-    fetchPlcData();
-
-    const interval = setInterval(() => {
-      fetchPlcData();
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update counts and total when plcData or tool list changes
-  useEffect(() => {
-    // Cập nhật tổng số = PLC base + DB delta
-    if (Object.keys(plcData).length > 0) {
-      const dbCountBySlot = {};
-      toolTypeTools.forEach(tool => {
-        const idx = Number(tool.slotIndex);
-        if (idx >= 1 && idx <= 9) {
-          dbCountBySlot[idx] = (dbCountBySlot[idx] || 0) + 1;
-        }
-      });
-      let total = 0;
-      for (let i = 1; i <= 9; i++) {
-        total += (plcData[`SL${i}`] || 0) + (dbCountBySlot[i] || 0);
-      }
-      if (total > 0) {
-        setStats(prev => ({ ...prev, totalTools: total }));
-      }
-    }
-
-    if (hasSearched && toolTypeSearch.trim()) {
-      updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch, plcData);
-    }
-  }, [plcData, hasSearched, toolTypeSearch, toolTypeTools]);
 
   const fetchStatistics = async () => {
     setLoading(true);
@@ -199,7 +130,7 @@ const fetchPlcData = async () => {
     }
   };
 
-const updateToolTypeStatsForSearch = (tools, searchText, currentPlcData = plcData) => {
+const updateToolTypeStatsForSearch = (tools, searchText) => {
   const keyword = searchText.trim().toUpperCase();
 
   // If no keyword, clear everything (only show after explicit search)
@@ -209,33 +140,35 @@ const updateToolTypeStatsForSearch = (tools, searchText, currentPlcData = plcDat
     return;
   }
 
-  // Build a map of slotIndex → { name, dbCount } from DB data
+  // Build a map of slotIndex → { name, count } from DB data
+  // Chỉ đếm dụng cụ chưa được xuất kho (isInUse === false)
   const statsBySlot = {};
   tools.forEach(tool => {
     const idx = Number(tool.slotIndex);
     if (idx >= 1 && idx <= 9) {
       if (!statsBySlot[idx]) {
-        statsBySlot[idx] = { name: tool.name || "Không tên", dbCount: 0 };
+        statsBySlot[idx] = { name: tool.name || "Không tên", count: 0 };
       }
-      statsBySlot[idx].dbCount += 1;
+      // Chỉ cộng count nếu tool chưa được xuất kho
+      if (!tool.isInUse) {
+        statsBySlot[idx].count += 1;
+      }
     }
   });
 
-  // Build full 9-slot result: count = PLC base + DB delta
+  // Build full 9-slot result: count from DB only
   const result = [];
   let matchCount = 0;
   for (let i = 1; i <= 9; i++) {
     const slotData = statsBySlot[i];
-    const plcCount = currentPlcData?.[`SL${i}`] ?? 0;
-    const dbCount = slotData?.dbCount ?? 0;
-    const totalCount = plcCount + dbCount;
+    const count = slotData?.count ?? 0;
 
     if (slotData && slotData.name.toUpperCase().includes(keyword)) {
       result.push({
         slotIndex: i,
         name: slotData.name,
-        count: totalCount,
-        warning: totalCount <= 5,
+        count: count,
+        warning: count <= 5,
         isEmpty: false,
       });
       matchCount++;
@@ -255,7 +188,7 @@ const updateToolTypeStatsForSearch = (tools, searchText, currentPlcData = plcDat
 
   const handleSearchToolType = () => {
     setHasSearched(true);
-    updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch, plcData);
+    updateToolTypeStatsForSearch(toolTypeTools, toolTypeSearch);
   };
 
   const calculatePercentages = () => {
